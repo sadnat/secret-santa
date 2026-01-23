@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : 'Secret Santa' %> - Secret Santa</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">🎅 Secret Santa</a>
+      <div class="nav-links">
+        <a href="/">Accueil</a>
+        <a href="/register">S'inscrire</a>
+        <% if (typeof isAdmin !== 'undefined' && isAdmin) { %>
+          <a href="/admin">Admin</a>
+          <a href="/admin/logout">Déconnexion</a>
+        <% } else { %>
+          <a href="/admin/login">Admin</a>
+        <% } %>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <%- body %>
+  </main>
+
+  <footer>
+    <p>🎄 Secret Santa - Joyeuses fêtes ! 🎄</p>
+  </footer>
+</body>
+</html>

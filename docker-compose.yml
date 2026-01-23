@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  secret-santa:
+    build: .
+    container_name: secret-santa
+    networks:
+      - npm_default
+    ports:
+      - "3033:3000"
+    environment:
+      - PORT=3000
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - SESSION_SECRET=${SESSION_SECRET:-secret_session_change_me}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-cle_chiffrement_32caracteres!!}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-secretsanta@example.com}
+    volumes:
+      - santa-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  santa-data:
+networks:
+    npm_default:
+      external: true

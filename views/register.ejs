@@ -1,0 +1,66 @@
+<%
+const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
+const body = `
+<div class="form-page">
+  <h1>📝 Inscription</h1>
+  <p>Rejoignez le Secret Santa en remplissant ce formulaire.</p>
+
+  ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
+
+  <form action="/register" method="POST" class="register-form">
+    <div class="form-section">
+      <h2>Informations personnelles</h2>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="first_name">Prénom *</label>
+          <input type="text" id="first_name" name="first_name" required
+                 value="${escapeHtml(formData.first_name || '')}"
+                 placeholder="Votre prénom">
+        </div>
+        <div class="form-group">
+          <label for="last_name">Nom *</label>
+          <input type="text" id="last_name" name="last_name" required
+                 value="${escapeHtml(formData.last_name || '')}"
+                 placeholder="Votre nom">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email *</label>
+        <input type="email" id="email" name="email" required
+               value="${escapeHtml(formData.email || '')}"
+               placeholder="votre@email.com">
+        <small>Vous recevrez votre tirage à cette adresse.</small>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h2>🎁 Vos souhaits (optionnel)</h2>
+      <p class="section-description">Donnez des idées à votre Secret Santa !</p>
+
+      <div class="form-group">
+        <label for="wish1">Souhait 1</label>
+        <input type="text" id="wish1" name="wish1"
+               value="${escapeHtml(formData.wish1 || '')}"
+               placeholder="Ex: Un livre de cuisine">
+      </div>
+      <div class="form-group">
+        <label for="wish2">Souhait 2</label>
+        <input type="text" id="wish2" name="wish2"
+               value="${escapeHtml(formData.wish2 || '')}"
+               placeholder="Ex: Des chaussettes rigolotes">
+      </div>
+      <div class="form-group">
+        <label for="wish3">Souhait 3</label>
+        <input type="text" id="wish3" name="wish3"
+               value="${escapeHtml(formData.wish3 || '')}"
+               placeholder="Ex: Du chocolat">
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-large">S'inscrire 🎄</button>
+  </form>
+</div>
+` %>
+<%- include('layout', { title, isAdmin, body }) %>

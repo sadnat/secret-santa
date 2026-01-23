@@ -1,0 +1,19 @@
+<% const body = `
+<div class="success-page">
+  <div class="success-icon">✅</div>
+  <h1>Inscription réussie !</h1>
+  <p>Merci de votre inscription au Secret Santa.</p>
+
+  <div class="success-info">
+    <h2>Et maintenant ?</h2>
+    <ul>
+      <li>🎯 Attendez que l'organisateur effectue le tirage au sort</li>
+      <li>📧 Vous recevrez un email avec le nom de la personne à qui offrir un cadeau</li>
+      <li>🤫 Gardez le secret jusqu'à l'échange !</li>
+    </ul>
+  </div>
+
+  <a href="/" class="btn btn-primary">Retour à l'accueil</a>
+</div>
+` %>
+<%- include('layout', { title, isAdmin, body }) %>
