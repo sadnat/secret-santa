@@ -1,0 +1,68 @@
+<%
+const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
+const body = `
+<div class="form-page">
+  <h1>Creer un compte organisateur</h1>
+  <p>Creez votre groupe Secret Santa et invitez vos participants.</p>
+
+  ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
+
+  <form action="/organizer/register" method="POST" class="register-form">
+    <div class="form-section">
+      <h2>Vos informations</h2>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="first_name">Prenom *</label>
+          <input type="text" id="first_name" name="first_name" required
+                 value="${escapeHtml(formData.first_name || '')}"
+                 placeholder="Votre prenom">
+        </div>
+        <div class="form-group">
+          <label for="last_name">Nom *</label>
+          <input type="text" id="last_name" name="last_name" required
+                 value="${escapeHtml(formData.last_name || '')}"
+                 placeholder="Votre nom">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email *</label>
+        <input type="email" id="email" name="email" required
+               value="${escapeHtml(formData.email || '')}"
+               placeholder="votre@email.com">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="password">Mot de passe *</label>
+          <input type="password" id="password" name="password" required
+                 placeholder="Minimum 6 caracteres">
+        </div>
+        <div class="form-group">
+          <label for="password_confirm">Confirmer le mot de passe *</label>
+          <input type="password" id="password_confirm" name="password_confirm" required
+                 placeholder="Confirmez le mot de passe">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h2>Votre groupe</h2>
+
+      <div class="form-group">
+        <label for="group_name">Nom du groupe *</label>
+        <input type="text" id="group_name" name="group_name" required
+               value="${escapeHtml(formData.group_name || '')}"
+               placeholder="Ex: Famille Dupont, Collegues Bureau 3...">
+        <small>Ce nom apparaitra dans les emails envoyes aux participants.</small>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-large">Creer mon compte</button>
+  </form>
+
+  <p class="back-link">Deja un compte ? <a href="/organizer/login">Se connecter</a></p>
+</div>
+` %>
+<%- include('../layout', { title, organizer: null, body }) %>

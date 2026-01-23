@@ -1,0 +1,69 @@
+<%
+const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
+
+const inviteLink = `https://santa.twibox.fr/join/${organizer.groupCode}`;
+
+const body = `
+<div class="admin-page">
+  <h1>Parametres</h1>
+
+  ${message ? '<div class="alert alert-success">' + escapeHtml(message) + '</div>' : ''}
+  ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
+
+  <section class="settings-section">
+    <h2>Informations du groupe</h2>
+    <div class="info-card">
+      <p><strong>Nom du groupe :</strong> ${escapeHtml(organizer.groupName)}</p>
+      <p><strong>Organisateur :</strong> ${escapeHtml(organizer.firstName)} ${escapeHtml(organizer.lastName)}</p>
+      <p><strong>Email :</strong> ${escapeHtml(organizer.email)}</p>
+    </div>
+  </section>
+
+  <section class="settings-section">
+    <h2>Lien d&#39;invitation</h2>
+    <p>Partagez ce lien ou ce code avec les participants pour les inviter a rejoindre votre groupe.</p>
+
+    <div class="invite-box">
+      <div class="invite-code">
+        <strong>Code :</strong>
+        <span class="code-value">${organizer.groupCode}</span>
+      </div>
+      <div class="invite-link">
+        <strong>Lien :</strong>
+        <div class="link-copy-container">
+          <input type="text" id="invite-link-input" value="${inviteLink}" readonly class="link-input" onclick="this.select()">
+          <button type="button" class="btn btn-primary btn-copy" onclick="copyInviteLink()">Copier</button>
+        </div>
+      </div>
+    </div>
+
+    <form action="/organizer/settings/regenerate-code" method="POST" class="regenerate-form"
+          onsubmit="return confirm('Regenerer le code ? Le code actuel ne fonctionnera plus.')">
+      <button type="submit" class="btn btn-secondary">Regenerer le code</button>
+    </form>
+  </section>
+
+  <div class="back-link">
+    <a href="/organizer/dashboard" class="btn btn-secondary">Retour au tableau de bord</a>
+  </div>
+</div>
+
+<script>
+function copyInviteLink() {
+  const input = document.getElementById('invite-link-input');
+  input.select();
+  input.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(input.value).then(function() {
+    const btn = document.querySelector('.btn-copy');
+    const originalText = btn.textContent;
+    btn.textContent = 'Copie !';
+    btn.classList.add('btn-success');
+    setTimeout(function() {
+      btn.textContent = originalText;
+      btn.classList.remove('btn-success');
+    }, 2000);
+  });
+}
+</script>
+` %>
+<%- include('../layout', { title, organizer, body }) %>

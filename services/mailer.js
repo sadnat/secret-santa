@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const Assignment = require('../models/assignment');
+const Organizer = require('../models/organizer');
 
 /**
  * Email Service for Secret Santa
@@ -38,13 +39,13 @@ const MailerService = {
    */
   async testConnection() {
     if (!this.isConfigured()) {
-      return { success: false, message: 'SMTP non configuré' };
+      return { success: false, message: 'SMTP non configure' };
     }
 
     try {
       const transporter = this.createTransporter();
       await transporter.verify();
-      return { success: true, message: 'Connexion SMTP réussie' };
+      return { success: true, message: 'Connexion SMTP reussie' };
     } catch (error) {
       return { success: false, message: `Erreur SMTP: ${error.message}` };
     }
@@ -53,16 +54,18 @@ const MailerService = {
   /**
    * Generate email HTML content
    */
-  generateEmailContent(giver, receiver) {
+  generateEmailContent(giver, receiver, groupName) {
     const wishes = [receiver.wish1, receiver.wish2, receiver.wish3].filter(Boolean);
     const wishesHtml = wishes.length > 0
       ? `
-        <h3>🎁 Ses idées de cadeaux :</h3>
+        <h3>Ses idees de cadeaux :</h3>
         <ul>
           ${wishes.map(w => `<li>${this.escapeHtml(w)}</li>`).join('')}
         </ul>
       `
-      : '<p><em>Cette personne n\'a pas indiqué de souhaits particuliers.</em></p>';
+      : '<p><em>Cette personne n\'a pas indique de souhaits particuliers.</em></p>';
+
+    const groupInfo = groupName ? `<p style="color: #666; font-size: 0.9em;">Groupe : ${this.escapeHtml(groupName)}</p>` : '';
 
     return `
       <!DOCTYPE html>
@@ -124,16 +127,17 @@ const MailerService = {
       </head>
       <body>
         <div class="container">
-          <h1>🎅 Secret Santa 🎄</h1>
+          <h1>Secret Santa</h1>
+          ${groupInfo}
           <h2>Bonjour ${this.escapeHtml(giver.first_name)} !</h2>
-          <p>Le tirage au sort a été effectué et tu dois offrir un cadeau à :</p>
+          <p>Le tirage au sort a ete effectue et tu dois offrir un cadeau a :</p>
           <div class="recipient-name">
-            🎁 ${this.escapeHtml(receiver.first_name)} ${this.escapeHtml(receiver.last_name)} 🎁
+            ${this.escapeHtml(receiver.first_name)} ${this.escapeHtml(receiver.last_name)}
           </div>
           ${wishesHtml}
-          <p>N'oublie pas : c'est un secret ! 🤫</p>
+          <p>N'oublie pas : c'est un secret !</p>
           <div class="footer">
-            <p>Joyeuses fêtes ! 🎄✨</p>
+            <p>Joyeuses fetes !</p>
           </div>
         </div>
       </body>
@@ -144,24 +148,26 @@ const MailerService = {
   /**
    * Generate plain text email content
    */
-  generateTextContent(giver, receiver) {
+  generateTextContent(giver, receiver, groupName) {
     const wishes = [receiver.wish1, receiver.wish2, receiver.wish3].filter(Boolean);
     const wishesText = wishes.length > 0
-      ? `\nSes idées de cadeaux :\n${wishes.map(w => `- ${w}`).join('\n')}\n`
-      : '\nCette personne n\'a pas indiqué de souhaits particuliers.\n';
+      ? `\nSes idees de cadeaux :\n${wishes.map(w => `- ${w}`).join('\n')}\n`
+      : '\nCette personne n\'a pas indique de souhaits particuliers.\n';
+
+    const groupInfo = groupName ? `\nGroupe : ${groupName}\n` : '';
 
     return `
-🎅 Secret Santa 🎄
-
+Secret Santa
+${groupInfo}
 Bonjour ${giver.first_name} !
 
-Le tirage au sort a été effectué et tu dois offrir un cadeau à :
+Le tirage au sort a ete effectue et tu dois offrir un cadeau a :
 
-🎁 ${receiver.first_name} ${receiver.last_name} 🎁
+${receiver.first_name} ${receiver.last_name}
 ${wishesText}
-N'oublie pas : c'est un secret ! 🤫
+N'oublie pas : c'est un secret !
 
-Joyeuses fêtes ! 🎄✨
+Joyeuses fetes !
     `.trim();
   },
 
@@ -181,20 +187,26 @@ Joyeuses fêtes ! 🎄✨
   /**
    * Send email to a single participant
    */
-  async sendEmail(assignment) {
+  async sendEmail(assignment, groupName) {
     const transporter = this.createTransporter();
+
+    const subject = groupName
+      ? `Secret Santa ${groupName} - Ton tirage au sort !`
+      : 'Secret Santa - Ton tirage au sort !';
 
     const mailOptions = {
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to: assignment.giver_email,
-      subject: '🎅 Secret Santa - Ton tirage au sort !',
+      subject: subject,
       text: this.generateTextContent(
         { first_name: assignment.giver_first_name },
-        assignment.receiver
+        assignment.receiver,
+        groupName
       ),
       html: this.generateEmailContent(
         { first_name: assignment.giver_first_name },
-        assignment.receiver
+        assignment.receiver,
+        groupName
       )
     };
 
@@ -203,23 +215,28 @@ Joyeuses fêtes ! 🎄✨
   },
 
   /**
-   * Send all pending emails
+   * Send all pending emails for a specific organizer
+   * @param {number} organizerId - The organizer's ID
    */
-  async sendAllEmails() {
+  async sendAllEmails(organizerId) {
     if (!this.isConfigured()) {
       return {
         success: false,
-        message: 'SMTP non configuré. Vérifiez les variables d\'environnement.'
+        message: 'SMTP non configure. Verifiez les variables d\'environnement.'
       };
     }
 
-    const assignments = Assignment.findAllDecrypted();
+    // Get organizer info for group name
+    const organizer = Organizer.findById(organizerId);
+    const groupName = organizer ? organizer.group_name : null;
+
+    const assignments = Assignment.findAllDecryptedByOrganizer(organizerId);
     const pending = assignments.filter(a => !a.email_sent);
 
     if (pending.length === 0) {
       return {
         success: true,
-        message: 'Tous les emails ont déjà été envoyés.',
+        message: 'Tous les emails ont deja ete envoyes.',
         sent: 0
       };
     }
@@ -234,7 +251,7 @@ Joyeuses fêtes ! 🎄✨
     for (const assignment of pending) {
       try {
         console.log(`Sending email to ${assignment.giver_email}...`);
-        await this.sendEmail(assignment);
+        await this.sendEmail(assignment, groupName);
         console.log(`Email sent successfully to ${assignment.giver_email}`);
         results.sent++;
       } catch (error) {
@@ -249,9 +266,9 @@ Joyeuses fêtes ! 🎄✨
 
     if (results.failed > 0) {
       results.success = false;
-      results.message = `${results.sent} emails envoyés, ${results.failed} échecs.`;
+      results.message = `${results.sent} emails envoyes, ${results.failed} echecs.`;
     } else {
-      results.message = `${results.sent} emails envoyés avec succès.`;
+      results.message = `${results.sent} emails envoyes avec succes.`;
     }
 
     return results;

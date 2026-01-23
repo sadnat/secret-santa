@@ -8,61 +8,61 @@ let participantOptions = participants.map(p =>
 let exclusionRows = exclusions.map(e => {
   const deleteForm = drawExists
     ? '<span class="text-muted">-</span>'
-    : `<form action="/admin/exclusions/${e.id}/delete" method="POST" style="display:inline;"><button type="submit" class="btn btn-small btn-danger">Supprimer</button></form>`;
-  return `<tr><td><strong>${escapeHtml(e.giver_name)}</strong></td><td class="arrow-cell">→</td><td><strong>${escapeHtml(e.receiver_name)}</strong></td><td>${deleteForm}</td></tr>`;
+    : `<form action="/organizer/exclusions/${e.id}/delete" method="POST" style="display:inline;"><button type="submit" class="btn btn-small btn-danger">Supprimer</button></form>`;
+  return `<tr><td><strong>${escapeHtml(e.giver_name)}</strong></td><td class="arrow-cell">ne peut pas offrir a</td><td><strong>${escapeHtml(e.receiver_name)}</strong></td><td>${deleteForm}</td></tr>`;
 }).join('');
 
 const body = `
 <div class="admin-page">
-  <h1>🚫 Règles d'exclusion</h1>
-  <p>Définissez qui ne peut PAS offrir à qui (ex: conjoints, collègues du même bureau, etc.)</p>
+  <h1>Regles d&#39;exclusion</h1>
+  <p>Definissez qui ne peut PAS offrir a qui (ex: conjoints, collegues du meme bureau, etc.)</p>
 
   ${message ? '<div class="alert alert-success">' + escapeHtml(message) + '</div>' : ''}
   ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
 
-  ${drawExists ? '<div class="alert alert-warning">⚠️ Le tirage a déjà été effectué. Les exclusions ne peuvent plus être modifiées.</div>' : ''}
+  ${drawExists ? '<div class="alert alert-warning">Le tirage a deja ete effectue. Les exclusions ne peuvent plus etre modifiees.</div>' : ''}
 
   ${!drawExists && participants.length >= 2 ? `
   <section class="add-exclusion-section">
-    <h2>Ajouter une règle</h2>
-    <form action="/admin/exclusions/add" method="POST" class="exclusion-form">
+    <h2>Ajouter une regle</h2>
+    <form action="/organizer/exclusions/add" method="POST" class="exclusion-form">
       <div class="form-row">
         <div class="form-group">
           <label for="giver_id">Cette personne</label>
           <select id="giver_id" name="giver_id" required>
-            <option value="">Sélectionner...</option>
+            <option value="">Selectionner...</option>
             ${participantOptions}
           </select>
         </div>
         <div class="form-group arrow-group">
-          <span class="arrow">→ ne peut pas offrir à →</span>
+          <span class="arrow">ne peut pas offrir a</span>
         </div>
         <div class="form-group">
           <label for="receiver_id">Cette personne</label>
           <select id="receiver_id" name="receiver_id" required>
-            <option value="">Sélectionner...</option>
+            <option value="">Selectionner...</option>
             ${participantOptions}
           </select>
         </div>
       </div>
-      <button type="submit" class="btn btn-primary">Ajouter la règle</button>
+      <button type="submit" class="btn btn-primary">Ajouter la regle</button>
     </form>
   </section>
   ` : ''}
 
-  ${participants.length < 2 ? '<div class="alert alert-info">Il faut au moins 2 participants pour définir des exclusions.</div>' : ''}
+  ${participants.length < 2 ? '<div class="alert alert-info">Il faut au moins 2 participants pour definir des exclusions.</div>' : ''}
 
   <section class="exclusions-list-section">
-    <h2>Règles actuelles</h2>
+    <h2>Regles actuelles</h2>
 
-    ${exclusions.length === 0 ? "<p class=\"empty-message\">Aucune règle d'exclusion définie.</p>" : `
+    ${exclusions.length === 0 ? "<p class=\"empty-message\">Aucune regle definie.</p>" : `
     <div class="table-wrapper">
       <table class="data-table">
         <thead>
           <tr>
             <th>Ne peut pas offrir</th>
             <th></th>
-            <th>À</th>
+            <th>A</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -75,8 +75,8 @@ const body = `
   </section>
 
   <div class="back-link">
-    <a href="/admin" class="btn btn-secondary">← Retour au tableau de bord</a>
+    <a href="/organizer/dashboard" class="btn btn-secondary">Retour au tableau de bord</a>
   </div>
 </div>
 ` %>
-<%- include('../layout', { title, isAdmin, body }) %>
+<%- include('../layout', { title, organizer, body }) %>

@@ -8,11 +8,12 @@ const Assignment = require('../models/assignment');
  */
 const DrawService = {
   /**
-   * Perform the Secret Santa draw
+   * Perform the Secret Santa draw for a specific organizer
+   * @param {number} organizerId - The organizer's ID
    * @returns {Object} { success: boolean, message: string, assignments?: array }
    */
-  performDraw() {
-    const participants = Participant.findAll();
+  performDraw(organizerId) {
+    const participants = Participant.findAllByOrganizer(organizerId);
 
     if (participants.length < 2) {
       return {
@@ -21,7 +22,7 @@ const DrawService = {
       };
     }
 
-    const exclusionMap = Exclusion.getExclusionMap();
+    const exclusionMap = Exclusion.getExclusionMapByOrganizer(organizerId);
 
     // Try to generate a valid assignment
     const result = this.generateHamiltonianCycle(participants, exclusionMap);
@@ -29,18 +30,18 @@ const DrawService = {
     if (!result.success) {
       return {
         success: false,
-        message: 'Impossible de générer un tirage valide avec les règles d\'exclusion actuelles. ' +
-                 'Il y a peut-être trop d\'exclusions.'
+        message: 'Impossible de generer un tirage valide avec les regles d\'exclusion actuelles. ' +
+                 'Il y a peut-etre trop d\'exclusions.'
       };
     }
 
-    // Clear previous assignments and save new ones
-    Assignment.clearAll();
+    // Clear previous assignments for this organizer and save new ones
+    Assignment.clearAllByOrganizer(organizerId);
     Assignment.createMany(result.assignments);
 
     return {
       success: true,
-      message: `Tirage effectué avec succès pour ${participants.length} participants.`,
+      message: `Tirage effectue avec succes pour ${participants.length} participants.`,
       count: participants.length
     };
   },
@@ -133,16 +134,17 @@ const DrawService = {
   },
 
   /**
-   * Check if a valid draw is possible without actually performing it
+   * Check if a valid draw is possible for a specific organizer
+   * @param {number} organizerId - The organizer's ID
    */
-  canPerformDraw() {
-    const participants = Participant.findAll();
+  canPerformDraw(organizerId) {
+    const participants = Participant.findAllByOrganizer(organizerId);
 
     if (participants.length < 2) {
       return { possible: false, reason: 'Pas assez de participants' };
     }
 
-    const exclusionMap = Exclusion.getExclusionMap();
+    const exclusionMap = Exclusion.getExclusionMapByOrganizer(organizerId);
 
     // Quick check: each participant must have at least one possible receiver
     for (const p of participants) {

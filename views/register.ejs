@@ -1,22 +1,27 @@
 <%
 const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
+const organizerName = typeof organizer !== 'undefined' && organizer ? `${organizer.first_name} ${organizer.last_name}` : '';
+const groupNameDisplay = typeof organizer !== 'undefined' && organizer ? organizer.group_name : '';
+const formAction = typeof groupCode !== 'undefined' && groupCode ? `/join/${groupCode}` : '/register';
+
 const body = `
 <div class="form-page">
-  <h1>📝 Inscription</h1>
-  <p>Rejoignez le Secret Santa en remplissant ce formulaire.</p>
+  <h1>Inscription</h1>
+  ${groupNameDisplay ? `<p class="group-context">Vous rejoignez le groupe : <strong>${escapeHtml(groupNameDisplay)}</strong></p>` : ''}
+  ${organizerName ? `<p class="organizer-info">Organise par : ${escapeHtml(organizerName)}</p>` : ''}
 
   ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
 
-  <form action="/register" method="POST" class="register-form">
+  <form action="${formAction}" method="POST" class="register-form">
     <div class="form-section">
       <h2>Informations personnelles</h2>
 
       <div class="form-row">
         <div class="form-group">
-          <label for="first_name">Prénom *</label>
+          <label for="first_name">Prenom *</label>
           <input type="text" id="first_name" name="first_name" required
                  value="${escapeHtml(formData.first_name || '')}"
-                 placeholder="Votre prénom">
+                 placeholder="Votre prenom">
         </div>
         <div class="form-group">
           <label for="last_name">Nom *</label>
@@ -31,13 +36,13 @@ const body = `
         <input type="email" id="email" name="email" required
                value="${escapeHtml(formData.email || '')}"
                placeholder="votre@email.com">
-        <small>Vous recevrez votre tirage à cette adresse.</small>
+        <small>Vous recevrez votre tirage a cette adresse.</small>
       </div>
     </div>
 
     <div class="form-section">
-      <h2>🎁 Vos souhaits (optionnel)</h2>
-      <p class="section-description">Donnez des idées à votre Secret Santa !</p>
+      <h2>Vos souhaits (optionnel)</h2>
+      <p class="section-description">Donnez des idees a votre Secret Santa !</p>
 
       <div class="form-group">
         <label for="wish1">Souhait 1</label>
@@ -59,8 +64,8 @@ const body = `
       </div>
     </div>
 
-    <button type="submit" class="btn btn-primary btn-large">S'inscrire 🎄</button>
+    <button type="submit" class="btn btn-primary btn-large">S&#39;inscrire</button>
   </form>
 </div>
 ` %>
-<%- include('layout', { title, isAdmin, body }) %>
+<%- include('layout', { title, organizer: null, body }) %>

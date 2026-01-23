@@ -8,14 +8,15 @@ if (participants.length > 0) {
     const date = new Date(p.created_at).toLocaleDateString('fr-FR');
     const deleteForm = drawExists
       ? '<span class="text-muted">-</span>'
-      : `<form action="/admin/participants/${p.id}/delete" method="POST" style="display:inline;" onsubmit="return confirm('Supprimer ?')"><button type="submit" class="btn btn-small btn-danger">Supprimer</button></form>`;
+      : `<form action="/organizer/participants/${p.id}/delete" method="POST" style="display:inline;" onsubmit="return confirm('Supprimer ?')"><button type="submit" class="btn btn-small btn-danger">Supprimer</button></form>`;
     return `<tr><td>${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}</td><td>${escapeHtml(p.email)}</td><td>${wishes || '-'}</td><td>${date}</td><td>${deleteForm}</td></tr>`;
   }).join('');
 }
 
 const body = `
 <div class="admin-page">
-  <h1>📊 Tableau de bord</h1>
+  <h1>Tableau de bord</h1>
+  <p class="group-info">Groupe : <strong>${escapeHtml(organizer.groupName)}</strong></p>
 
   ${message ? '<div class="alert alert-success">' + escapeHtml(message) + '</div>' : ''}
   ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
@@ -26,28 +27,29 @@ const body = `
       <span class="stat-label">Participants</span>
     </div>
     <div class="stat-card ${drawExists ? 'stat-success' : ''}">
-      <span class="stat-value">${drawExists ? '✓' : '✗'}</span>
-      <span class="stat-label">Tirage effectué</span>
+      <span class="stat-value">${drawExists ? 'Oui' : 'Non'}</span>
+      <span class="stat-label">Tirage effectue</span>
     </div>
     <div class="stat-card">
       <span class="stat-value">${sentEmails} / ${participants.length}</span>
-      <span class="stat-label">Emails envoyés</span>
+      <span class="stat-label">Emails envoyes</span>
     </div>
     <div class="stat-card ${smtpConfigured ? 'stat-success' : 'stat-warning'}">
-      <span class="stat-value">${smtpConfigured ? '✓' : '✗'}</span>
-      <span class="stat-label">SMTP configuré</span>
+      <span class="stat-value">${smtpConfigured ? 'Oui' : 'Non'}</span>
+      <span class="stat-label">SMTP configure</span>
     </div>
   </div>
 
   <div class="admin-actions">
-    <a href="/admin/exclusions" class="btn btn-secondary">Gérer les exclusions</a>
-    <a href="/admin/draw" class="btn btn-primary">Tirage au sort</a>
+    <a href="/organizer/settings" class="btn btn-secondary">Parametres / Lien invitation</a>
+    <a href="/organizer/exclusions" class="btn btn-secondary">Gerer les exclusions</a>
+    <a href="/organizer/draw" class="btn btn-primary">Tirage au sort</a>
   </div>
 
   <section class="participants-section">
     <h2>Liste des participants</h2>
 
-    ${participants.length === 0 ? '<p class="empty-message">Aucun participant inscrit pour le moment.</p>' : `
+    ${participants.length === 0 ? '<p class="empty-message">Aucun participant inscrit pour le moment. Partagez votre lien depuis les parametres.</p>' : `
     <div class="table-wrapper">
       <table class="data-table">
         <thead>
@@ -68,4 +70,4 @@ const body = `
   </section>
 </div>
 ` %>
-<%- include('../layout', { title, isAdmin, body }) %>
+<%- include('../layout', { title, organizer, body }) %>

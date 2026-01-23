@@ -21,6 +21,18 @@ const Exclusion = {
   },
 
   /**
+   * Delete an exclusion rule (verifying organizer ownership via participant)
+   */
+  deleteByOrganizer(id, organizerId) {
+    const stmt = db.prepare(`
+      DELETE FROM exclusions
+      WHERE id = ?
+      AND giver_id IN (SELECT id FROM participants WHERE organizer_id = ?)
+    `);
+    return stmt.run(id, organizerId);
+  },
+
+  /**
    * Delete exclusion by giver and receiver
    */
   deleteByPair(giverId, receiverId) {
@@ -29,7 +41,7 @@ const Exclusion = {
   },
 
   /**
-   * Get all exclusions with participant names
+   * Get all exclusions with participant names (global)
    */
   findAll() {
     const stmt = db.prepare(`
@@ -48,6 +60,26 @@ const Exclusion = {
   },
 
   /**
+   * Get all exclusions for a specific organizer
+   */
+  findAllByOrganizer(organizerId) {
+    const stmt = db.prepare(`
+      SELECT
+        e.id,
+        e.giver_id,
+        e.receiver_id,
+        g.first_name || ' ' || g.last_name as giver_name,
+        r.first_name || ' ' || r.last_name as receiver_name
+      FROM exclusions e
+      JOIN participants g ON e.giver_id = g.id
+      JOIN participants r ON e.receiver_id = r.id
+      WHERE g.organizer_id = ?
+      ORDER BY giver_name, receiver_name
+    `);
+    return stmt.all(organizerId);
+  },
+
+  /**
    * Get exclusions for a specific giver
    */
   findByGiver(giverId) {
@@ -56,10 +88,33 @@ const Exclusion = {
   },
 
   /**
-   * Get all exclusions as a map: giverId -> [receiverIds]
+   * Get all exclusions as a map: giverId -> [receiverIds] (global)
    */
   getExclusionMap() {
     const exclusions = db.prepare('SELECT giver_id, receiver_id FROM exclusions').all();
+    const map = new Map();
+
+    for (const { giver_id, receiver_id } of exclusions) {
+      if (!map.has(giver_id)) {
+        map.set(giver_id, []);
+      }
+      map.get(giver_id).push(receiver_id);
+    }
+
+    return map;
+  },
+
+  /**
+   * Get exclusion map for a specific organizer
+   */
+  getExclusionMapByOrganizer(organizerId) {
+    const exclusions = db.prepare(`
+      SELECT e.giver_id, e.receiver_id
+      FROM exclusions e
+      JOIN participants p ON e.giver_id = p.id
+      WHERE p.organizer_id = ?
+    `).all(organizerId);
+
     const map = new Map();
 
     for (const { giver_id, receiver_id } of exclusions) {

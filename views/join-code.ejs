@@ -1,0 +1,25 @@
+<%
+const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
+
+const body = `
+<div class="form-page">
+  <h1>Rejoindre un groupe</h1>
+  <p>Entrez le code fourni par l&#39;organisateur de votre Secret Santa.</p>
+
+  ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
+
+  <form action="/join" method="POST" class="join-form">
+    <div class="form-group">
+      <label for="code">Code d&#39;invitation</label>
+      <input type="text" id="code" name="code" required
+             placeholder="Ex: ABC12345"
+             class="code-input"
+             style="text-transform: uppercase; letter-spacing: 2px; font-size: 1.2em;">
+    </div>
+    <button type="submit" class="btn btn-primary">Rejoindre</button>
+  </form>
+
+  <p class="back-link"><a href="/">Retour a l&#39;accueil</a></p>
+</div>
+` %>
+<%- include('layout', { title, organizer: null, body }) %>

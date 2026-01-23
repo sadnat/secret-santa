@@ -5,7 +5,7 @@ const path = require('path');
 
 const db = require('./config/database');
 const indexRoutes = require('./routes/index');
-const adminRoutes = require('./routes/admin');
+const organizerRoutes = require('./routes/organizer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,13 +32,14 @@ app.use(session({
 
 // Make session available in views
 app.use((req, res, next) => {
-  res.locals.isAdmin = req.session.isAdmin || false;
+  res.locals.organizer = req.session.organizer || null;
+  res.locals.isAdmin = !!req.session.organizer; // Backwards compatibility
   next();
 });
 
 // Routes
+app.use('/organizer', organizerRoutes);
 app.use('/', indexRoutes);
-app.use('/admin', adminRoutes);
 
 // Error handler
 app.use((err, req, res, next) => {
@@ -52,7 +53,7 @@ app.use((err, req, res, next) => {
 // 404 handler
 app.use((req, res) => {
   res.status(404).render('error', {
-    message: 'Page non trouvée',
+    message: 'Page non trouvee',
     error: {}
   });
 });
@@ -61,7 +62,7 @@ app.use((req, res) => {
 db.initialize();
 
 app.listen(PORT, () => {
-  console.log(`🎅 Secret Santa app running on http://localhost:${PORT}`);
+  console.log(`Secret Santa app running on http://localhost:${PORT}`);
 });
 
 module.exports = app;

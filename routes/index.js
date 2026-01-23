@@ -1,57 +1,108 @@
 const express = require('express');
 const router = express.Router();
 const Participant = require('../models/participant');
+const Organizer = require('../models/organizer');
 
 /**
  * Home page
  */
 router.get('/', (req, res) => {
-  const participantCount = Participant.count();
   res.render('index', {
-    title: 'Secret Santa',
-    participantCount
+    title: 'Secret Santa'
   });
 });
 
 /**
- * Registration form
+ * Page to enter a group code
  */
-router.get('/register', (req, res) => {
+router.get('/join', (req, res) => {
+  res.render('join-code', {
+    title: 'Rejoindre un groupe',
+    error: null
+  });
+});
+
+/**
+ * Handle code submission - redirect to /join/:code
+ */
+router.post('/join', (req, res) => {
+  const { code } = req.body;
+
+  if (!code || code.trim().length === 0) {
+    return res.render('join-code', {
+      title: 'Rejoindre un groupe',
+      error: 'Veuillez entrer un code.'
+    });
+  }
+
+  res.redirect(`/join/${code.trim().toUpperCase()}`);
+});
+
+/**
+ * Registration form via invitation link
+ */
+router.get('/join/:code', (req, res) => {
+  const { code } = req.params;
+  const organizer = Organizer.findByCode(code);
+
+  if (!organizer) {
+    return res.render('error', {
+      title: 'Code invalide',
+      message: 'Ce code d\'invitation n\'existe pas ou n\'est plus valide.',
+      error: {}
+    });
+  }
+
   res.render('register', {
     title: 'Inscription',
+    organizer,
+    groupCode: code,
     error: null,
     formData: {}
   });
 });
 
 /**
- * Handle registration
+ * Handle registration via invitation link
  */
-router.post('/register', (req, res) => {
+router.post('/join/:code', (req, res) => {
+  const { code } = req.params;
+  const organizer = Organizer.findByCode(code);
+
+  if (!organizer) {
+    return res.render('error', {
+      title: 'Code invalide',
+      message: 'Ce code d\'invitation n\'existe pas ou n\'est plus valide.',
+      error: {}
+    });
+  }
+
   const { first_name, last_name, email, wish1, wish2, wish3 } = req.body;
 
   // Validation
   const errors = [];
 
   if (!first_name || first_name.trim().length < 2) {
-    errors.push('Le prénom doit contenir au moins 2 caractères.');
+    errors.push('Le prenom doit contenir au moins 2 caracteres.');
   }
 
   if (!last_name || last_name.trim().length < 2) {
-    errors.push('Le nom doit contenir au moins 2 caractères.');
+    errors.push('Le nom doit contenir au moins 2 caracteres.');
   }
 
   if (!email || !isValidEmail(email)) {
     errors.push('Veuillez entrer une adresse email valide.');
   }
 
-  if (errors.length === 0 && Participant.emailExists(email)) {
-    errors.push('Cette adresse email est déjà inscrite.');
+  if (errors.length === 0 && Participant.emailExistsForOrganizer(email, organizer.id)) {
+    errors.push('Cette adresse email est deja inscrite dans ce groupe.');
   }
 
   if (errors.length > 0) {
     return res.render('register', {
       title: 'Inscription',
+      organizer,
+      groupCode: code,
       error: errors.join(' '),
       formData: req.body
     });
@@ -64,15 +115,18 @@ router.post('/register', (req, res) => {
       email,
       wish1,
       wish2,
-      wish3
+      wish3,
+      organizer_id: organizer.id
     });
 
-    res.redirect('/success');
+    res.redirect(`/success?group=${encodeURIComponent(organizer.group_name)}`);
   } catch (error) {
     console.error('Registration error:', error);
     res.render('register', {
       title: 'Inscription',
-      error: 'Une erreur est survenue lors de l\'inscription. Veuillez réessayer.',
+      organizer,
+      groupCode: code,
+      error: 'Une erreur est survenue lors de l\'inscription. Veuillez reessayer.',
       formData: req.body
     });
   }
@@ -82,8 +136,11 @@ router.post('/register', (req, res) => {
  * Success page after registration
  */
 router.get('/success', (req, res) => {
+  const groupName = req.query.group || null;
+
   res.render('success', {
-    title: 'Inscription réussie'
+    title: 'Inscription reussie',
+    groupName
   });
 });
 

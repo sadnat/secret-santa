@@ -4,10 +4,10 @@ const errorMessage = typeof message !== 'undefined' ? message : 'Une erreur est 
 const errorDetails = typeof error !== 'undefined' && error && error.message ? error.message : '';
 const body = `
 <div class="error-page">
-  <div class="error-icon">❌</div>
+  <div class="error-icon">X</div>
   <h1>${errorMessage}</h1>
   ${errorDetails ? '<p class="error-details">' + errorDetails + '</p>' : ''}
-  <a href="/" class="btn btn-primary">Retour à l'accueil</a>
+  <a href="/" class="btn btn-primary">Retour a l&#39;accueil</a>
 </div>
 ` %>
-<%- include('layout', { title: pageTitle, isAdmin: typeof isAdmin !== 'undefined' ? isAdmin : false, body }) %>
+<%- include('layout', { title: pageTitle, organizer: typeof organizer !== 'undefined' ? organizer : null, body }) %>

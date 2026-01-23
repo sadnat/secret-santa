@@ -1,0 +1,27 @@
+<%
+const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
+const body = `
+<div class="form-page login-page">
+  <h1>Connexion Organisateur</h1>
+
+  ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
+
+  <form action="/organizer/login" method="POST" class="login-form">
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required
+             placeholder="votre@email.com">
+    </div>
+    <div class="form-group">
+      <label for="password">Mot de passe</label>
+      <input type="password" id="password" name="password" required
+             placeholder="Votre mot de passe">
+    </div>
+    <button type="submit" class="btn btn-primary">Se connecter</button>
+  </form>
+
+  <p class="back-link">Pas encore de compte ? <a href="/organizer/register">Creer un compte</a></p>
+  <p class="back-link"><a href="/">Retour a l'accueil</a></p>
+</div>
+` %>
+<%- include('../layout', { title, organizer: null, body }) %>

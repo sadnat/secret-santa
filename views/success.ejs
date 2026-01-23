@@ -1,19 +1,23 @@
-<% const body = `
+<%
+const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
+const displayGroupName = typeof groupName !== 'undefined' && groupName ? groupName : null;
+
+const body = `
 <div class="success-page">
-  <div class="success-icon">✅</div>
-  <h1>Inscription réussie !</h1>
-  <p>Merci de votre inscription au Secret Santa.</p>
+  <div class="success-icon">OK</div>
+  <h1>Inscription reussie !</h1>
+  ${displayGroupName ? `<p>Vous etes inscrit au groupe <strong>${escapeHtml(displayGroupName)}</strong>.</p>` : '<p>Merci de votre inscription au Secret Santa.</p>'}
 
   <div class="success-info">
     <h2>Et maintenant ?</h2>
     <ul>
-      <li>🎯 Attendez que l'organisateur effectue le tirage au sort</li>
-      <li>📧 Vous recevrez un email avec le nom de la personne à qui offrir un cadeau</li>
-      <li>🤫 Gardez le secret jusqu'à l'échange !</li>
+      <li>Attendez que l&#39;organisateur effectue le tirage au sort</li>
+      <li>Vous recevrez un email avec le nom de la personne a qui offrir un cadeau</li>
+      <li>Gardez le secret jusqu&#39;a l&#39;echange !</li>
     </ul>
   </div>
 
-  <a href="/" class="btn btn-primary">Retour à l'accueil</a>
+  <a href="/" class="btn btn-primary">Retour a l&#39;accueil</a>
 </div>
 ` %>
-<%- include('layout', { title, isAdmin, body }) %>
+<%- include('layout', { title, organizer: null, body }) %>

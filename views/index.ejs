@@ -1,39 +1,56 @@
 <% const body = `
 <div class="hero">
-  <h1>🎅 Secret Santa 🎄</h1>
-  <p class="subtitle">Organisez votre échange de cadeaux en toute simplicité !</p>
-
-  <div class="stats">
-    <div class="stat-box">
-      <span class="stat-number">${participantCount}</span>
-      <span class="stat-label">Participant${participantCount > 1 ? 's' : ''} inscrit${participantCount > 1 ? 's' : ''}</span>
-    </div>
-  </div>
+  <h1>Secret Santa</h1>
+  <p class="subtitle">Organisez votre echange de cadeaux en toute simplicite !</p>
 
   <div class="cta-buttons">
-    <a href="/register" class="btn btn-primary">S'inscrire</a>
+    <a href="/join" class="btn btn-primary">Rejoindre un groupe</a>
+    <a href="/organizer/register" class="btn btn-secondary">Devenir organisateur</a>
   </div>
 </div>
 
 <section class="how-it-works">
-  <h2>Comment ça marche ?</h2>
+  <h2>Comment ca marche ?</h2>
   <div class="steps">
     <div class="step">
       <div class="step-number">1</div>
-      <h3>Inscrivez-vous</h3>
-      <p>Remplissez le formulaire avec vos informations et vos idées de cadeaux.</p>
+      <h3>Organisateur</h3>
+      <p>Creez votre compte organisateur et votre groupe Secret Santa.</p>
     </div>
     <div class="step">
       <div class="step-number">2</div>
-      <h3>Attendez le tirage</h3>
-      <p>L'organisateur effectuera le tirage au sort une fois tout le monde inscrit.</p>
+      <h3>Invitation</h3>
+      <p>Partagez le lien avec vos participants.</p>
     </div>
     <div class="step">
       <div class="step-number">3</div>
-      <h3>Recevez votre email</h3>
-      <p>Vous recevrez un email secret vous indiquant à qui offrir un cadeau.</p>
+      <h3>Inscription</h3>
+      <p>Les participants indiquent leurs souhaits de cadeaux.</p>
+    </div>
+    <div class="step">
+      <div class="step-number">4</div>
+      <h3>Tirage</h3>
+      <p>L'organisateur lance le tirage et chacun recoit un email secret.</p>
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <h2>Fonctionnalites</h2>
+  <div class="feature-list">
+    <div class="feature">
+      <h3>Multi-groupes</h3>
+      <p>Chaque organisateur gere son propre groupe de participants.</p>
+    </div>
+    <div class="feature">
+      <h3>Regles d&#39;exclusion</h3>
+      <p>Definissez qui ne peut pas offrir a qui (conjoints, etc.).</p>
+    </div>
+    <div class="feature">
+      <h3>Securise</h3>
+      <p>Les assignations sont chiffrees - meme l&#39;organisateur ne peut pas les voir.</p>
     </div>
   </div>
 </section>
 ` %>
-<%- include('layout', { title, isAdmin, body }) %>
+<%- include('layout', { title, organizer: typeof organizer !== 'undefined' ? organizer : null, body }) %>

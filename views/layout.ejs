@@ -10,15 +10,16 @@
 <body>
   <header>
     <nav>
-      <a href="/" class="logo">🎅 Secret Santa</a>
+      <a href="/" class="logo">Secret Santa</a>
       <div class="nav-links">
         <a href="/">Accueil</a>
-        <a href="/register">S'inscrire</a>
-        <% if (typeof isAdmin !== 'undefined' && isAdmin) { %>
-          <a href="/admin">Admin</a>
-          <a href="/admin/logout">Déconnexion</a>
+        <% if (typeof organizer !== 'undefined' && organizer) { %>
+          <a href="/organizer/dashboard">Mon groupe</a>
+          <a href="/organizer/settings">Parametres</a>
+          <a href="/organizer/logout">Deconnexion</a>
         <% } else { %>
-          <a href="/admin/login">Admin</a>
+          <a href="/join">Rejoindre un groupe</a>
+          <a href="/organizer/login">Espace organisateur</a>
         <% } %>
       </div>
     </nav>
@@ -29,7 +30,7 @@
   </main>
 
   <footer>
-    <p>🎄 Secret Santa - Joyeuses fêtes ! 🎄</p>
+    <p>Secret Santa - Joyeuses fetes !</p>
   </footer>
 </body>
 </html>
