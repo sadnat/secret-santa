@@ -13,6 +13,29 @@
   --warning-color: #ffc107;
   --danger-color: #dc3545;
   --info-color: #17a2b8;
+  --gold-color: #d4af37;
+}
+
+/* Christmas Animations */
+@keyframes snowfall {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0.3;
+  }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes swing {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
 }
 
 /* Reset */
@@ -31,6 +54,25 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Snowflakes background */
+body::before {
+  content: "❄ ❅ ❆ ❄ ❅ ❆ ❄ ❅ ❆ ❄ ❅ ❆ ❄ ❅ ❆";
+  position: fixed;
+  top: -20px;
+  left: 0;
+  right: 0;
+  font-size: 1.5rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-shadow: 0 0 5px rgba(173, 216, 230, 0.8);
+  animation: snowfall 15s linear infinite;
+  pointer-events: none;
+  z-index: 1000;
+  white-space: nowrap;
+  letter-spacing: 3rem;
 }
 
 /* Header */
@@ -39,6 +81,25 @@ header {
   color: white;
   padding: 1rem 2rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+header::before {
+  content: "🎄";
+  position: absolute;
+  left: 2rem;
+  top: 0.6rem;
+  font-size: 1.6rem;
+  animation: swing 2s ease-in-out infinite;
+  transform-origin: top center;
+}
+
+header::after {
+  content: "🎁";
+  position: absolute;
+  right: 2rem;
+  top: 0.7rem;
+  font-size: 1.5rem;
 }
 
 nav {
@@ -54,6 +115,10 @@ nav {
   font-weight: bold;
   color: white;
   text-decoration: none;
+}
+
+.logo::before {
+  content: "🎅 ";
 }
 
 .nav-links {
@@ -87,6 +152,14 @@ footer {
   text-align: center;
   padding: 1rem;
   margin-top: auto;
+  position: relative;
+}
+
+footer::before {
+  content: "🎄 ❄️ 🎁 ❄️ 🎄";
+  display: block;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.5rem;
 }
 
 /* Hero section */
@@ -96,12 +169,40 @@ footer {
   background: linear-gradient(135deg, #fff8dc, #ffe4e1);
   border-radius: 12px;
   margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: "⭐";
+  position: absolute;
+  top: 1rem;
+  left: 2rem;
+  font-size: 2rem;
+  animation: twinkle 2s ease-in-out infinite;
+}
+
+.hero::after {
+  content: "⭐";
+  position: absolute;
+  top: 1rem;
+  right: 2rem;
+  font-size: 2rem;
+  animation: twinkle 2s ease-in-out infinite 0.5s;
 }
 
 .hero h1 {
   font-size: 3rem;
   color: var(--primary-color);
   margin-bottom: 0.5rem;
+}
+
+.hero h1::before {
+  content: "🎅 ";
+}
+
+.hero h1::after {
+  content: " 🎁";
 }
 
 .subtitle {
@@ -124,6 +225,17 @@ footer {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   text-align: center;
+  position: relative;
+  border-top: 4px solid var(--primary-color);
+}
+
+.stat-box::before {
+  content: "🎀";
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.2rem;
 }
 
 .stat-number {
@@ -169,6 +281,10 @@ footer {
   background-color: var(--secondary-dark);
 }
 
+.btn-secondary::before {
+  content: "🎄 ";
+}
+
 .btn-danger {
   background-color: var(--danger-color);
   color: white;
@@ -176,6 +292,15 @@ footer {
 
 .btn-danger:hover {
   background-color: #c82333;
+}
+
+.btn-warning {
+  background-color: var(--warning-color);
+  color: #333;
+}
+
+.btn-warning:hover {
+  background-color: #e0a800;
 }
 
 .btn-small {
@@ -210,6 +335,14 @@ footer {
   margin-bottom: 2rem;
 }
 
+.how-it-works h2::before {
+  content: "🌟 ";
+}
+
+.how-it-works h2::after {
+  content: " 🌟";
+}
+
 .steps {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -227,7 +360,7 @@ footer {
 .step-number {
   width: 50px;
   height: 50px;
-  background: var(--secondary-color);
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   color: white;
   border-radius: 50%;
   display: flex;
@@ -236,11 +369,30 @@ footer {
   font-size: 1.5rem;
   font-weight: bold;
   margin: 0 auto 1rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+.step-number::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background: var(--gold-color);
+  border-radius: 50%;
+  box-shadow: 0 0 4px var(--gold-color);
 }
 
 .step h3 {
   color: var(--primary-color);
   margin-bottom: 0.5rem;
+}
+
+.step h3::after {
+  content: " 🎁";
 }
 
 /* Form styles */
@@ -256,6 +408,10 @@ footer {
 .form-page h1 {
   color: var(--primary-color);
   margin-bottom: 0.5rem;
+}
+
+.form-page h1::before {
+  content: "🎅 ";
 }
 
 .form-section {
@@ -366,6 +522,11 @@ footer {
 .success-icon {
   font-size: 4rem;
   margin-bottom: 1rem;
+  animation: swing 1s ease-in-out infinite;
+}
+
+.success-page h1::after {
+  content: " 🎄";
 }
 
 .success-page h1 {
@@ -453,6 +614,14 @@ footer {
 .admin-page h1 {
   color: var(--primary-color);
   margin-bottom: 0.5rem;
+}
+
+.admin-page h1::before {
+  content: "🎄 ";
+}
+
+.admin-page h1::after {
+  content: " 🎄";
 }
 
 .admin-page > p {
@@ -637,6 +806,10 @@ footer {
   margin-bottom: 1rem;
 }
 
+.security-notice::before {
+  content: "🔒 ";
+}
+
 .email-actions {
   margin-top: 1rem;
 }
@@ -693,6 +866,13 @@ footer {
   padding: 0.5rem 1rem;
   border-radius: 4px;
   margin-left: 0.5rem;
+  border: 2px dashed var(--secondary-color);
+  position: relative;
+}
+
+.code-value::after {
+  content: " 🎁";
+  font-size: 1rem;
 }
 
 .invite-link {
@@ -774,6 +954,14 @@ footer {
   margin-bottom: 2rem;
 }
 
+.features h2::before {
+  content: "🎁 ";
+}
+
+.features h2::after {
+  content: " 🎁";
+}
+
 .feature-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -790,6 +978,10 @@ footer {
 .feature h3 {
   color: var(--secondary-color);
   margin-bottom: 0.5rem;
+}
+
+.feature h3::before {
+  content: "❄️ ";
 }
 
 /* Join form */
@@ -842,4 +1034,67 @@ footer {
   .link-input {
     width: 100%;
   }
+}
+
+/* Warning box for delete page */
+.warning-box {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-left: 4px solid #dc3545;
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.warning-box h2 {
+  color: #dc3545;
+  margin-bottom: 0.75rem;
+}
+
+.warning-box ul {
+  margin: 1rem 0 0 1.5rem;
+}
+
+.warning-box li {
+  margin: 0.5rem 0;
+}
+
+/* Danger zone section */
+.danger-zone {
+  background: #fff5f5;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.danger-zone h2 {
+  color: #dc3545;
+}
+
+/* Delete form */
+.delete-form {
+  margin-top: 1.5rem;
+}
+
+.delete-form .form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Archive form */
+.archive-form {
+  margin-top: 1rem;
+}
+
+/* Status badges */
+.status-active {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.status-archived {
+  color: #6c757d;
+  font-weight: 600;
 }

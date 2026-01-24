@@ -26,9 +26,17 @@ function initialize() {
       last_name TEXT NOT NULL,
       group_name TEXT NOT NULL,
       group_code TEXT UNIQUE NOT NULL,
+      archived_at DATETIME DEFAULT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Add archived_at column if it doesn't exist (migration)
+  const orgColumns = db.prepare("PRAGMA table_info(organizers)").all();
+  const hasArchivedAt = orgColumns.some(col => col.name === 'archived_at');
+  if (!hasArchivedAt) {
+    db.exec(`ALTER TABLE organizers ADD COLUMN archived_at DATETIME DEFAULT NULL`);
+  }
 
   // Check if participants table exists
   const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='participants'").get();

@@ -39,7 +39,7 @@ Node.js/Express application for organizing Secret Santa gift exchanges with mult
   - `mailer.js` - Nodemailer SMTP integration with group name in emails
 - **views/** - EJS templates:
   - `views/` - Public pages (index, register, success, join-code, error)
-  - `views/organizer/` - Organizer pages (login, register, dashboard, settings, exclusions, draw)
+  - `views/organizer/` - Organizer pages (login, register, dashboard, settings, delete, exclusions, draw)
   - `views/layout.ejs` - Shared layout with dynamic navigation
 
 ### Multi-Organizer System
@@ -50,6 +50,12 @@ Node.js/Express application for organizing Secret Santa gift exchanges with mult
 - Same email can participate in multiple groups (unique per organizer)
 - Data isolation: organizers only see their own participants, exclusions, and assignments
 - Session stores organizer info: `req.session.organizer = { id, email, firstName, lastName, groupName, groupCode }`
+
+### Group Lifecycle
+
+- **Archive**: Organizers can archive their group to block all modifications (no new participants, no exclusion changes, no new draws). Can be unarchived later.
+- **Delete**: Permanent account deletion with cascade (participants, exclusions, assignments). Requires password confirmation.
+- `requireNotArchived` middleware blocks modifications on archived groups.
 
 ### Security Model
 
@@ -62,7 +68,7 @@ Node.js/Express application for organizing Secret Santa gift exchanges with mult
 
 SQLite stored in `data/santa.db` with tables:
 
-- `organizers` - id, email, password_hash, first_name, last_name, group_name, group_code, created_at
+- `organizers` - id, email, password_hash, first_name, last_name, group_name, group_code, archived_at, created_at
 - `participants` - id, first_name, last_name, email, wish1-3, organizer_id, created_at
 - `exclusions` - id, giver_id, receiver_id (references participants)
 - `assignments` - id, giver_id, receiver_hash, encrypted_receiver, email_sent, created_at
@@ -93,6 +99,7 @@ Copy `.env.example` to `.env`. Key variables:
 - `/organizer/login` - Organizer login
 - `/organizer/logout` - Logout
 - `/organizer/dashboard` - Manage participants
-- `/organizer/settings` - View/regenerate invite code
+- `/organizer/settings` - View/regenerate invite code, archive/unarchive group
+- `/organizer/settings/delete` - Delete account confirmation page
 - `/organizer/exclusions` - Manage exclusion rules
 - `/organizer/draw` - Perform draw and send emails

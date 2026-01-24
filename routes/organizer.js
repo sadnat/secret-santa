@@ -32,6 +32,17 @@ function isValidEmail(email) {
   return emailRegex.test(email);
 }
 
+/**
+ * Middleware to check if group is archived (blocks modifications)
+ */
+function requireNotArchived(req, res, next) {
+  const organizerId = getOrganizerId(req);
+  if (Organizer.isArchived(organizerId)) {
+    return res.redirect('/organizer/dashboard?error=' + encodeURIComponent('Ce groupe est archive. Aucune modification possible.'));
+  }
+  next();
+}
+
 // ==================== AUTHENTICATION ====================
 
 /**
@@ -218,7 +229,7 @@ router.get('/dashboard', requireAuth, (req, res) => {
 /**
  * Delete participant
  */
-router.post('/participants/:id/delete', requireAuth, (req, res) => {
+router.post('/participants/:id/delete', requireAuth, requireNotArchived, (req, res) => {
   const { id } = req.params;
   const organizerId = getOrganizerId(req);
 
@@ -267,7 +278,7 @@ router.get('/exclusions', requireAuth, (req, res) => {
 /**
  * Add exclusion rule
  */
-router.post('/exclusions/add', requireAuth, (req, res) => {
+router.post('/exclusions/add', requireAuth, requireNotArchived, (req, res) => {
   const { giver_id, receiver_id } = req.body;
   const organizerId = getOrganizerId(req);
 
@@ -299,7 +310,7 @@ router.post('/exclusions/add', requireAuth, (req, res) => {
 /**
  * Delete exclusion rule
  */
-router.post('/exclusions/:id/delete', requireAuth, (req, res) => {
+router.post('/exclusions/:id/delete', requireAuth, requireNotArchived, (req, res) => {
   const { id } = req.params;
   const organizerId = getOrganizerId(req);
 
@@ -349,7 +360,7 @@ router.get('/draw', requireAuth, (req, res) => {
 /**
  * Perform draw
  */
-router.post('/draw/perform', requireAuth, (req, res) => {
+router.post('/draw/perform', requireAuth, requireNotArchived, (req, res) => {
   const organizerId = getOrganizerId(req);
 
   if (Assignment.drawExistsByOrganizer(organizerId)) {
@@ -432,7 +443,7 @@ router.get('/settings', requireAuth, (req, res) => {
 /**
  * Regenerate group code
  */
-router.post('/settings/regenerate-code', requireAuth, (req, res) => {
+router.post('/settings/regenerate-code', requireAuth, requireNotArchived, (req, res) => {
   const organizerId = getOrganizerId(req);
 
   try {
@@ -445,6 +456,78 @@ router.post('/settings/regenerate-code', requireAuth, (req, res) => {
   } catch (error) {
     console.error('Regenerate code error:', error);
     res.redirect('/organizer/settings?error=' + encodeURIComponent('Erreur lors de la regeneration.'));
+  }
+});
+
+/**
+ * Archive group
+ */
+router.post('/settings/archive', requireAuth, (req, res) => {
+  const organizerId = getOrganizerId(req);
+
+  try {
+    Organizer.archive(organizerId);
+    res.redirect('/organizer/settings?message=' + encodeURIComponent('Groupe archive avec succes.'));
+  } catch (error) {
+    console.error('Archive error:', error);
+    res.redirect('/organizer/settings?error=' + encodeURIComponent('Erreur lors de l\'archivage.'));
+  }
+});
+
+/**
+ * Unarchive group
+ */
+router.post('/settings/unarchive', requireAuth, (req, res) => {
+  const organizerId = getOrganizerId(req);
+
+  try {
+    Organizer.unarchive(organizerId);
+    res.redirect('/organizer/settings?message=' + encodeURIComponent('Groupe desarchive avec succes.'));
+  } catch (error) {
+    console.error('Unarchive error:', error);
+    res.redirect('/organizer/settings?error=' + encodeURIComponent('Erreur lors du desarchivage.'));
+  }
+});
+
+/**
+ * Delete account page
+ */
+router.get('/settings/delete', requireAuth, (req, res) => {
+  const organizerId = getOrganizerId(req);
+  const participantCount = Participant.countByOrganizer(organizerId);
+
+  res.render('organizer/delete', {
+    title: 'Supprimer le compte',
+    organizer: req.session.organizer,
+    participantCount,
+    error: req.query.error
+  });
+});
+
+/**
+ * Delete account
+ */
+router.post('/settings/delete', requireAuth, async (req, res) => {
+  const organizerId = getOrganizerId(req);
+  const { password } = req.body;
+
+  try {
+    // Verify password
+    const isValid = await Organizer.verifyPasswordById(organizerId, password);
+    if (!isValid) {
+      return res.redirect('/organizer/settings/delete?error=' + encodeURIComponent('Mot de passe incorrect.'));
+    }
+
+    // Delete all data
+    Organizer.delete(organizerId);
+
+    // Destroy session
+    req.session.destroy();
+
+    res.redirect('/?message=' + encodeURIComponent('Compte supprime avec succes.'));
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.redirect('/organizer/settings/delete?error=' + encodeURIComponent('Erreur lors de la suppression.'));
   }
 });
 

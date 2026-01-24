@@ -1,0 +1,38 @@
+<%
+const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
+
+const body = `
+<div class="admin-page">
+  <h1>Supprimer le compte</h1>
+
+  ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
+
+  <div class="warning-box">
+    <h2>Attention !</h2>
+    <p>Cette action est <strong>irreversible</strong>. En supprimant votre compte, vous supprimerez egalement :</p>
+    <ul>
+      <li><strong>${participantCount}</strong> participant(s)</li>
+      <li>Toutes les regles d&#39;exclusion</li>
+      <li>Tous les tirages et assignations</li>
+      <li>Toutes les donnees associees a votre groupe</li>
+    </ul>
+  </div>
+
+  <form action="/organizer/settings/delete" method="POST" class="delete-form">
+    <div class="form-group">
+      <label for="password">Confirmez avec votre mot de passe :</label>
+      <input type="password" id="password" name="password" required class="form-control"
+             placeholder="Entrez votre mot de passe">
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-danger"
+              onclick="return confirm('Etes-vous absolument certain de vouloir supprimer votre compte ? Cette action est irreversible.')">
+        Supprimer definitivement mon compte
+      </button>
+      <a href="/organizer/settings" class="btn btn-secondary">Annuler</a>
+    </div>
+  </form>
+</div>
+` %>
+<%- include('../layout', { title, organizer, body }) %>

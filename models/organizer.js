@@ -127,6 +127,69 @@ const Organizer = {
     values.push(id);
     const stmt = db.prepare(`UPDATE organizers SET ${updates.join(', ')} WHERE id = ?`);
     return stmt.run(...values);
+  },
+
+  /**
+   * Archive a group
+   */
+  archive(id) {
+    const stmt = db.prepare('UPDATE organizers SET archived_at = CURRENT_TIMESTAMP WHERE id = ?');
+    return stmt.run(id);
+  },
+
+  /**
+   * Unarchive a group
+   */
+  unarchive(id) {
+    const stmt = db.prepare('UPDATE organizers SET archived_at = NULL WHERE id = ?');
+    return stmt.run(id);
+  },
+
+  /**
+   * Check if organizer is archived
+   */
+  isArchived(id) {
+    const stmt = db.prepare('SELECT archived_at FROM organizers WHERE id = ?');
+    const result = stmt.get(id);
+    return result && result.archived_at !== null;
+  },
+
+  /**
+   * Delete organizer and all associated data
+   */
+  delete(id) {
+    // Delete in order due to foreign key constraints
+    // 1. Delete assignments for participants of this organizer
+    db.prepare(`
+      DELETE FROM assignments
+      WHERE giver_id IN (SELECT id FROM participants WHERE organizer_id = ?)
+    `).run(id);
+
+    // 2. Delete exclusions for participants of this organizer
+    db.prepare(`
+      DELETE FROM exclusions
+      WHERE giver_id IN (SELECT id FROM participants WHERE organizer_id = ?)
+    `).run(id);
+
+    // 3. Delete participants
+    db.prepare('DELETE FROM participants WHERE organizer_id = ?').run(id);
+
+    // 4. Delete organizer
+    db.prepare('DELETE FROM organizers WHERE id = ?').run(id);
+
+    return true;
+  },
+
+  /**
+   * Verify password for an organizer by ID
+   */
+  async verifyPasswordById(id, password) {
+    const stmt = db.prepare('SELECT password_hash FROM organizers WHERE id = ?');
+    const organizer = stmt.get(id);
+    if (!organizer) {
+      return false;
+    }
+    return bcrypt.compare(password, organizer.password_hash);
   }
 };
 

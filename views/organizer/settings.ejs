@@ -2,6 +2,7 @@
 const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
 
 const inviteLink = `https://santa.twibox.fr/join/${organizer.groupCode}`;
+const isArchived = fullOrganizer && fullOrganizer.archived_at !== null;
 
 const body = `
 <div class="admin-page">
@@ -10,12 +11,15 @@ const body = `
   ${message ? '<div class="alert alert-success">' + escapeHtml(message) + '</div>' : ''}
   ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
 
+  ${isArchived ? '<div class="alert alert-warning">Ce groupe est archive. Les modifications sont desactivees.</div>' : ''}
+
   <section class="settings-section">
     <h2>Informations du groupe</h2>
     <div class="info-card">
       <p><strong>Nom du groupe :</strong> ${escapeHtml(organizer.groupName)}</p>
       <p><strong>Organisateur :</strong> ${escapeHtml(organizer.firstName)} ${escapeHtml(organizer.lastName)}</p>
       <p><strong>Email :</strong> ${escapeHtml(organizer.email)}</p>
+      <p><strong>Statut :</strong> ${isArchived ? '<span class="status-archived">Archive</span>' : '<span class="status-active">Actif</span>'}</p>
     </div>
   </section>
 
@@ -37,10 +41,34 @@ const body = `
       </div>
     </div>
 
+    ${!isArchived ? `
     <form action="/organizer/settings/regenerate-code" method="POST" class="regenerate-form"
           onsubmit="return confirm('Regenerer le code ? Le code actuel ne fonctionnera plus.')">
       <button type="submit" class="btn btn-secondary">Regenerer le code</button>
     </form>
+    ` : ''}
+  </section>
+
+  <section class="settings-section">
+    <h2>Gestion du groupe</h2>
+    ${isArchived ? `
+    <p>Ce groupe est actuellement archive. Les participants ne peuvent plus s&#39;inscrire et aucune modification n&#39;est possible.</p>
+    <form action="/organizer/settings/unarchive" method="POST" class="archive-form">
+      <button type="submit" class="btn btn-primary">Desarchiver le groupe</button>
+    </form>
+    ` : `
+    <p>Archiver le groupe bloque toutes les modifications et empeche les nouvelles inscriptions. Vous pourrez desarchiver plus tard si necessaire.</p>
+    <form action="/organizer/settings/archive" method="POST" class="archive-form"
+          onsubmit="return confirm('Archiver ce groupe ? Les modifications seront bloquees.')">
+      <button type="submit" class="btn btn-warning">Archiver le groupe</button>
+    </form>
+    `}
+  </section>
+
+  <section class="settings-section danger-zone">
+    <h2>Zone de danger</h2>
+    <p>La suppression du compte est irreversible et supprimera toutes les donnees associees (participants, tirages, etc.).</p>
+    <a href="/organizer/settings/delete" class="btn btn-danger">Supprimer mon compte</a>
   </section>
 
   <div class="back-link">
