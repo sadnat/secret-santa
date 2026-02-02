@@ -2,11 +2,11 @@ const { db } = require('../config/database');
 
 const Participant = {
   /**
-   * Create a new participant for an organizer
+   * Create a new participant for a group
    */
   create(data) {
     const stmt = db.prepare(`
-      INSERT INTO participants (first_name, last_name, email, wish1, wish2, wish3, organizer_id)
+      INSERT INTO participants (first_name, last_name, email, wish1, wish2, wish3, group_id)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
 
@@ -17,7 +17,7 @@ const Participant = {
       data.wish1 || null,
       data.wish2 || null,
       data.wish3 || null,
-      data.organizer_id
+      data.group_id
     );
 
     return Number(result.lastInsertRowid);
@@ -32,87 +32,55 @@ const Participant = {
   },
 
   /**
-   * Find participant by ID and verify organizer ownership
+   * Find participant by ID and verify group ownership
    */
-  findByIdAndOrganizer(id, organizerId) {
-    const stmt = db.prepare('SELECT * FROM participants WHERE id = ? AND organizer_id = ?');
-    return stmt.get(id, organizerId);
+  findByIdAndGroup(id, groupId) {
+    const stmt = db.prepare('SELECT * FROM participants WHERE id = ? AND group_id = ?');
+    return stmt.get(id, groupId);
   },
 
   /**
-   * Find participant by email (global - for backwards compatibility)
+   * Get all participants for a specific group
    */
-  findByEmail(email) {
-    const stmt = db.prepare('SELECT * FROM participants WHERE email = ?');
-    return stmt.get(email.toLowerCase().trim());
+  findAllByGroup(groupId) {
+    const stmt = db.prepare('SELECT * FROM participants WHERE group_id = ? ORDER BY created_at DESC');
+    return stmt.all(groupId);
   },
 
   /**
-   * Find participant by email for a specific organizer
+   * Count participants for a specific group
    */
-  findByEmailAndOrganizer(email, organizerId) {
-    const stmt = db.prepare('SELECT * FROM participants WHERE email = ? AND organizer_id = ?');
-    return stmt.get(email.toLowerCase().trim(), organizerId);
+  countByGroup(groupId) {
+    const stmt = db.prepare('SELECT COUNT(*) as count FROM participants WHERE group_id = ?');
+    return stmt.get(groupId).count;
   },
 
   /**
-   * Get all participants (global - for backwards compatibility)
+   * Delete a participant (verifies group ownership)
    */
-  findAll() {
-    const stmt = db.prepare('SELECT * FROM participants ORDER BY created_at DESC');
-    return stmt.all();
-  },
-
-  /**
-   * Get all participants for a specific organizer
-   */
-  findAllByOrganizer(organizerId) {
-    const stmt = db.prepare('SELECT * FROM participants WHERE organizer_id = ? ORDER BY created_at DESC');
-    return stmt.all(organizerId);
-  },
-
-  /**
-   * Count participants (global)
-   */
-  count() {
-    const stmt = db.prepare('SELECT COUNT(*) as count FROM participants');
-    return stmt.get().count;
-  },
-
-  /**
-   * Count participants for a specific organizer
-   */
-  countByOrganizer(organizerId) {
-    const stmt = db.prepare('SELECT COUNT(*) as count FROM participants WHERE organizer_id = ?');
-    return stmt.get(organizerId).count;
-  },
-
-  /**
-   * Delete a participant (verifies organizer ownership)
-   */
-  delete(id, organizerId) {
-    if (organizerId) {
-      const stmt = db.prepare('DELETE FROM participants WHERE id = ? AND organizer_id = ?');
-      return stmt.run(id, organizerId);
+  delete(id, groupId) {
+    if (groupId) {
+      const stmt = db.prepare('DELETE FROM participants WHERE id = ? AND group_id = ?');
+      return stmt.run(id, groupId);
     }
     const stmt = db.prepare('DELETE FROM participants WHERE id = ?');
     return stmt.run(id);
   },
 
   /**
-   * Check if email exists (global)
+   * Check if email exists for a specific group
    */
-  emailExists(email) {
-    const stmt = db.prepare('SELECT id FROM participants WHERE email = ?');
-    return stmt.get(email.toLowerCase().trim()) !== undefined;
+  emailExistsForGroup(email, groupId) {
+    const stmt = db.prepare('SELECT id FROM participants WHERE email = ? AND group_id = ?');
+    return stmt.get(email.toLowerCase().trim(), groupId) !== undefined;
   },
-
+  
   /**
-   * Check if email exists for a specific organizer
+   * Find participant by email (global)
    */
-  emailExistsForOrganizer(email, organizerId) {
-    const stmt = db.prepare('SELECT id FROM participants WHERE email = ? AND organizer_id = ?');
-    return stmt.get(email.toLowerCase().trim(), organizerId) !== undefined;
+  findByEmail(email) {
+    const stmt = db.prepare('SELECT * FROM participants WHERE email = ?');
+    return stmt.get(email.toLowerCase().trim());
   }
 };
 

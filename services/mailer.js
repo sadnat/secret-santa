@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer');
 const Assignment = require('../models/assignment');
-const Organizer = require('../models/organizer');
+const Group = require('../models/group');
 
 /**
  * Email Service for Secret Santa
@@ -215,10 +215,43 @@ Joyeuses fetes !
   },
 
   /**
-   * Send all pending emails for a specific organizer
-   * @param {number} organizerId - The organizer's ID
+   * Send verification email to organizer
    */
-  async sendAllEmails(organizerId) {
+  async sendVerificationEmail(email, token) {
+    if (!this.isConfigured()) {
+      console.error('SMTP not configured, skipping verification email');
+      return { success: false, message: 'SMTP non configuré' };
+    }
+
+    const baseUrl = process.env.APP_URL || 'http://localhost:3000';
+    const link = `${baseUrl}/organizer/verify/${token}`;
+    
+    const transporter = this.createTransporter();
+    
+    try {
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || process.env.SMTP_USER,
+        to: email,
+        subject: 'Vérifiez votre compte Secret Santa',
+        html: `
+          <h1>Bienvenue !</h1>
+          <p>Merci de vérifier votre adresse email pour activer votre compte organisateur.</p>
+          <p><a href="${link}">Cliquez ici pour vérifier votre email</a></p>
+          <p>Ou copiez ce lien : ${link}</p>
+        `
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Email verification error:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * Send all pending emails for a specific group
+   * @param {number} groupId - The group's ID
+   */
+  async sendAllEmails(groupId) {
     if (!this.isConfigured()) {
       return {
         success: false,
@@ -226,11 +259,11 @@ Joyeuses fetes !
       };
     }
 
-    // Get organizer info for group name
-    const organizer = Organizer.findById(organizerId);
-    const groupName = organizer ? organizer.group_name : null;
+    // Get group info for group name
+    const group = Group.findById(groupId);
+    const groupName = group ? group.name : null;
 
-    const assignments = Assignment.findAllDecryptedByOrganizer(organizerId);
+    const assignments = Assignment.findAllDecryptedByGroup(groupId);
     const pending = assignments.filter(a => !a.email_sent);
 
     if (pending.length === 0) {

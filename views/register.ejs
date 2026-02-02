@@ -1,14 +1,12 @@
 <%
 const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
-const organizerName = typeof organizer !== 'undefined' && organizer ? `${organizer.first_name} ${organizer.last_name}` : '';
-const groupNameDisplay = typeof organizer !== 'undefined' && organizer ? organizer.group_name : '';
+const groupNameDisplay = typeof group !== 'undefined' && group ? group.name : '';
 const formAction = typeof groupCode !== 'undefined' && groupCode ? `/join/${groupCode}` : '/register';
 
 const body = `
 <div class="form-page">
   <h1>Inscription</h1>
   ${groupNameDisplay ? `<p class="group-context">Vous rejoignez le groupe : <strong>${escapeHtml(groupNameDisplay)}</strong></p>` : ''}
-  ${organizerName ? `<p class="organizer-info">Organise par : ${escapeHtml(organizerName)}</p>` : ''}
 
   ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
 

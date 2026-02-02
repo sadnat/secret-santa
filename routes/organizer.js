@@ -1,10 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Organizer = require('../models/organizer');
-const Participant = require('../models/participant');
-const Exclusion = require('../models/exclusion');
-const Assignment = require('../models/assignment');
-const DrawService = require('../services/draw');
+const Group = require('../models/group');
 const MailerService = require('../services/mailer');
 
 /**
@@ -30,17 +27,6 @@ function getOrganizerId(req) {
 function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
-}
-
-/**
- * Middleware to check if group is archived (blocks modifications)
- */
-function requireNotArchived(req, res, next) {
-  const organizerId = getOrganizerId(req);
-  if (Organizer.isArchived(organizerId)) {
-    return res.redirect('/organizer/dashboard?error=' + encodeURIComponent('Ce groupe est archive. Aucune modification possible.'));
-  }
-  next();
 }
 
 // ==================== AUTHENTICATION ====================
@@ -105,37 +91,63 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    const result = await Organizer.create({
+    // 1. Create Organizer
+    const { id, verificationToken } = await Organizer.create({
       email,
       password,
       first_name,
       last_name,
-      group_name
+      group_name // Passed for legacy column compatibility
     });
 
-    // Auto-login after registration
-    req.session.organizer = {
-      id: result.id,
-      email: email.toLowerCase().trim(),
-      firstName: first_name.trim(),
-      lastName: last_name.trim(),
-      groupName: group_name.trim(),
-      groupCode: result.groupCode
-    };
+    // 2. Create Initial Group
+    Group.create(id, group_name);
 
-    // Save session before redirect
-    req.session.save((err) => {
-      if (err) {
-        console.error('Session save error:', err);
-      }
-      res.redirect('/organizer/dashboard');
-    });
+    // 3. Send Verification Email
+    const emailResult = await MailerService.sendVerificationEmail(email, verificationToken);
+
+    if (emailResult.success) {
+      res.render('organizer/login', {
+        title: 'Vérification Email',
+        error: null,
+        message: 'Compte créé ! Un email de vérification a été envoyé. Veuillez cliquer sur le lien reçu pour activer votre compte.'
+      });
+    } else {
+      // If email sending fails (e.g. no SMTP), verify manually or show error?
+      // For now, show error but account exists.
+      res.render('organizer/login', {
+        title: 'Connexion Organisateur',
+        error: 'Compte créé mais échec de l\'envoi de l\'email de vérification : ' + emailResult.message + '. Contactez l\'administrateur.'
+      });
+    }
+
   } catch (error) {
     console.error('Registration error:', error);
     res.render('organizer/register', {
       title: 'Creer un compte organisateur',
       error: 'Une erreur est survenue lors de l\'inscription. Veuillez reessayer.',
       formData: req.body
+    });
+  }
+});
+
+/**
+ * Verify Email Route
+ */
+router.get('/verify/:token', (req, res) => {
+  const { token } = req.params;
+  const success = Organizer.verifyEmail(token);
+  
+  if (success) {
+    res.render('organizer/login', {
+      title: 'Connexion',
+      message: 'Email vérifié avec succès ! Vous pouvez maintenant vous connecter.',
+      error: null
+    });
+  } else {
+    res.render('organizer/login', {
+      title: 'Connexion',
+      error: 'Lien de vérification invalide ou expiré.'
     });
   }
 });
@@ -163,13 +175,18 @@ router.post('/login', async (req, res) => {
     const organizer = await Organizer.verifyPassword(email, password);
 
     if (organizer) {
+      if (!organizer.is_verified) {
+        return res.render('organizer/login', {
+          title: 'Connexion Organisateur',
+          error: 'Veuillez vérifier votre adresse email avant de vous connecter.'
+        });
+      }
+
       req.session.organizer = {
         id: organizer.id,
         email: organizer.email,
         firstName: organizer.first_name,
-        lastName: organizer.last_name,
-        groupName: organizer.group_name,
-        groupCode: organizer.group_code
+        lastName: organizer.last_name
       };
       return req.session.save((err) => {
         if (err) {
@@ -200,230 +217,45 @@ router.get('/logout', (req, res) => {
   res.redirect('/');
 });
 
-// ==================== DASHBOARD ====================
+// ==================== DASHBOARD (Group List) ====================
 
 /**
- * Dashboard - list participants
+ * Dashboard - list groups
  */
 router.get('/dashboard', requireAuth, (req, res) => {
   const organizerId = getOrganizerId(req);
-  const participants = Participant.findAllByOrganizer(organizerId);
-  const drawExists = Assignment.drawExistsByOrganizer(organizerId);
-  const pendingEmails = Assignment.countPendingEmailsByOrganizer(organizerId);
-  const sentEmails = Assignment.countSentEmailsByOrganizer(organizerId);
-  const smtpConfigured = MailerService.isConfigured();
+  const groups = Group.findAllByOrganizer(organizerId);
 
   res.render('organizer/dashboard', {
-    title: 'Tableau de bord',
+    title: 'Mes Groupes',
     organizer: req.session.organizer,
-    participants,
-    drawExists,
-    pendingEmails,
-    sentEmails,
-    smtpConfigured,
+    groups,
     message: req.query.message,
     error: req.query.error
   });
 });
 
 /**
- * Delete participant
+ * Create new group
  */
-router.post('/participants/:id/delete', requireAuth, requireNotArchived, (req, res) => {
-  const { id } = req.params;
+router.post('/groups/create', requireAuth, (req, res) => {
+  const { group_name } = req.body;
   const organizerId = getOrganizerId(req);
 
-  try {
-    // Check if draw exists
-    if (Assignment.drawExistsByOrganizer(organizerId)) {
-      return res.redirect('/organizer/dashboard?error=' + encodeURIComponent('Impossible de supprimer un participant apres le tirage.'));
-    }
-
-    // Verify participant belongs to this organizer
-    const participant = Participant.findByIdAndOrganizer(id, organizerId);
-    if (!participant) {
-      return res.redirect('/organizer/dashboard?error=' + encodeURIComponent('Participant non trouve.'));
-    }
-
-    Participant.delete(id, organizerId);
-    res.redirect('/organizer/dashboard?message=' + encodeURIComponent('Participant supprime.'));
-  } catch (error) {
-    console.error('Delete participant error:', error);
-    res.redirect('/organizer/dashboard?error=' + encodeURIComponent('Erreur lors de la suppression.'));
-  }
-});
-
-// ==================== EXCLUSIONS ====================
-
-/**
- * Exclusions management page
- */
-router.get('/exclusions', requireAuth, (req, res) => {
-  const organizerId = getOrganizerId(req);
-  const participants = Participant.findAllByOrganizer(organizerId);
-  const exclusions = Exclusion.findAllByOrganizer(organizerId);
-  const drawExists = Assignment.drawExistsByOrganizer(organizerId);
-
-  res.render('organizer/exclusions', {
-    title: 'Regles d\'exclusion',
-    organizer: req.session.organizer,
-    participants,
-    exclusions,
-    drawExists,
-    message: req.query.message,
-    error: req.query.error
-  });
-});
-
-/**
- * Add exclusion rule
- */
-router.post('/exclusions/add', requireAuth, requireNotArchived, (req, res) => {
-  const { giver_id, receiver_id } = req.body;
-  const organizerId = getOrganizerId(req);
-
-  if (Assignment.drawExistsByOrganizer(organizerId)) {
-    return res.redirect('/organizer/exclusions?error=' + encodeURIComponent('Impossible de modifier les exclusions apres le tirage.'));
-  }
-
-  if (giver_id === receiver_id) {
-    return res.redirect('/organizer/exclusions?error=' + encodeURIComponent('Une personne ne peut pas s\'exclure elle-meme.'));
-  }
-
-  // Verify both participants belong to this organizer
-  const giver = Participant.findByIdAndOrganizer(giver_id, organizerId);
-  const receiver = Participant.findByIdAndOrganizer(receiver_id, organizerId);
-
-  if (!giver || !receiver) {
-    return res.redirect('/organizer/exclusions?error=' + encodeURIComponent('Participants non valides.'));
+  if (!group_name || group_name.trim().length < 2) {
+    return res.redirect('/organizer/dashboard?error=' + encodeURIComponent('Le nom du groupe doit contenir au moins 2 caracteres.'));
   }
 
   try {
-    Exclusion.create(parseInt(giver_id), parseInt(receiver_id));
-    res.redirect('/organizer/exclusions?message=' + encodeURIComponent('Regle d\'exclusion ajoutee.'));
+    Group.create(organizerId, group_name);
+    res.redirect('/organizer/dashboard?message=' + encodeURIComponent('Groupe cree avec succes.'));
   } catch (error) {
-    console.error('Add exclusion error:', error);
-    res.redirect('/organizer/exclusions?error=' + encodeURIComponent('Erreur lors de l\'ajout.'));
+    console.error('Create group error:', error);
+    res.redirect('/organizer/dashboard?error=' + encodeURIComponent('Erreur lors de la creation du groupe.'));
   }
 });
 
-/**
- * Delete exclusion rule
- */
-router.post('/exclusions/:id/delete', requireAuth, requireNotArchived, (req, res) => {
-  const { id } = req.params;
-  const organizerId = getOrganizerId(req);
-
-  if (Assignment.drawExistsByOrganizer(organizerId)) {
-    return res.redirect('/organizer/exclusions?error=' + encodeURIComponent('Impossible de modifier les exclusions apres le tirage.'));
-  }
-
-  try {
-    Exclusion.deleteByOrganizer(id, organizerId);
-    res.redirect('/organizer/exclusions?message=' + encodeURIComponent('Regle d\'exclusion supprimee.'));
-  } catch (error) {
-    console.error('Delete exclusion error:', error);
-    res.redirect('/organizer/exclusions?error=' + encodeURIComponent('Erreur lors de la suppression.'));
-  }
-});
-
-// ==================== DRAW ====================
-
-/**
- * Draw page
- */
-router.get('/draw', requireAuth, (req, res) => {
-  const organizerId = getOrganizerId(req);
-  const participantCount = Participant.countByOrganizer(organizerId);
-  const drawExists = Assignment.drawExistsByOrganizer(organizerId);
-  const assignments = drawExists ? Assignment.findAllForOrganizer(organizerId) : [];
-  const canDraw = DrawService.canPerformDraw(organizerId);
-  const pendingEmails = Assignment.countPendingEmailsByOrganizer(organizerId);
-  const sentEmails = Assignment.countSentEmailsByOrganizer(organizerId);
-  const smtpConfigured = MailerService.isConfigured();
-
-  res.render('organizer/draw', {
-    title: 'Tirage au sort',
-    organizer: req.session.organizer,
-    participantCount,
-    drawExists,
-    assignments,
-    canDraw,
-    pendingEmails,
-    sentEmails,
-    smtpConfigured,
-    message: req.query.message,
-    error: req.query.error
-  });
-});
-
-/**
- * Perform draw
- */
-router.post('/draw/perform', requireAuth, requireNotArchived, (req, res) => {
-  const organizerId = getOrganizerId(req);
-
-  if (Assignment.drawExistsByOrganizer(organizerId)) {
-    return res.redirect('/organizer/draw?error=' + encodeURIComponent('Un tirage a deja ete effectue.'));
-  }
-
-  const result = DrawService.performDraw(organizerId);
-
-  if (result.success) {
-    res.redirect('/organizer/draw?message=' + encodeURIComponent(result.message));
-  } else {
-    res.redirect('/organizer/draw?error=' + encodeURIComponent(result.message));
-  }
-});
-
-/**
- * Reset draw (clear all assignments)
- */
-router.post('/draw/reset', requireAuth, (req, res) => {
-  const organizerId = getOrganizerId(req);
-
-  try {
-    Assignment.clearAllByOrganizer(organizerId);
-    res.redirect('/organizer/draw?message=' + encodeURIComponent('Tirage reinitialise.'));
-  } catch (error) {
-    console.error('Reset draw error:', error);
-    res.redirect('/organizer/draw?error=' + encodeURIComponent('Erreur lors de la reinitialisation.'));
-  }
-});
-
-/**
- * Send all emails
- */
-router.post('/draw/send-emails', requireAuth, async (req, res) => {
-  const organizerId = getOrganizerId(req);
-
-  if (!Assignment.drawExistsByOrganizer(organizerId)) {
-    return res.redirect('/organizer/draw?error=' + encodeURIComponent('Aucun tirage effectue.'));
-  }
-
-  try {
-    const result = await MailerService.sendAllEmails(organizerId);
-
-    if (result.success) {
-      res.redirect('/organizer/draw?message=' + encodeURIComponent(result.message));
-    } else {
-      res.redirect('/organizer/draw?error=' + encodeURIComponent(result.message));
-    }
-  } catch (error) {
-    console.error('Send emails error:', error);
-    res.redirect('/organizer/draw?error=' + encodeURIComponent('Erreur lors de l\'envoi des emails.'));
-  }
-});
-
-/**
- * Test SMTP connection
- */
-router.post('/test-smtp', requireAuth, async (req, res) => {
-  const result = await MailerService.testConnection();
-  res.json(result);
-});
-
-// ==================== SETTINGS ====================
+// ==================== ACCOUNT SETTINGS ====================
 
 /**
  * Settings page
@@ -432,7 +264,7 @@ router.get('/settings', requireAuth, (req, res) => {
   const organizer = Organizer.findById(getOrganizerId(req));
 
   res.render('organizer/settings', {
-    title: 'Parametres',
+    title: 'Parametres du compte',
     organizer: req.session.organizer,
     fullOrganizer: organizer,
     message: req.query.message,
@@ -441,65 +273,16 @@ router.get('/settings', requireAuth, (req, res) => {
 });
 
 /**
- * Regenerate group code
- */
-router.post('/settings/regenerate-code', requireAuth, requireNotArchived, (req, res) => {
-  const organizerId = getOrganizerId(req);
-
-  try {
-    const newCode = Organizer.updateGroupCode(organizerId);
-
-    // Update session
-    req.session.organizer.groupCode = newCode;
-
-    res.redirect('/organizer/settings?message=' + encodeURIComponent('Code d\'invitation regenere.'));
-  } catch (error) {
-    console.error('Regenerate code error:', error);
-    res.redirect('/organizer/settings?error=' + encodeURIComponent('Erreur lors de la regeneration.'));
-  }
-});
-
-/**
- * Archive group
- */
-router.post('/settings/archive', requireAuth, (req, res) => {
-  const organizerId = getOrganizerId(req);
-
-  try {
-    Organizer.archive(organizerId);
-    res.redirect('/organizer/settings?message=' + encodeURIComponent('Groupe archive avec succes.'));
-  } catch (error) {
-    console.error('Archive error:', error);
-    res.redirect('/organizer/settings?error=' + encodeURIComponent('Erreur lors de l\'archivage.'));
-  }
-});
-
-/**
- * Unarchive group
- */
-router.post('/settings/unarchive', requireAuth, (req, res) => {
-  const organizerId = getOrganizerId(req);
-
-  try {
-    Organizer.unarchive(organizerId);
-    res.redirect('/organizer/settings?message=' + encodeURIComponent('Groupe desarchive avec succes.'));
-  } catch (error) {
-    console.error('Unarchive error:', error);
-    res.redirect('/organizer/settings?error=' + encodeURIComponent('Erreur lors du desarchivage.'));
-  }
-});
-
-/**
  * Delete account page
  */
 router.get('/settings/delete', requireAuth, (req, res) => {
   const organizerId = getOrganizerId(req);
-  const participantCount = Participant.countByOrganizer(organizerId);
-
+  const groups = Group.findAllByOrganizer(organizerId);
+  
   res.render('organizer/delete', {
     title: 'Supprimer le compte',
     organizer: req.session.organizer,
-    participantCount,
+    groupCount: groups.length,
     error: req.query.error
   });
 });

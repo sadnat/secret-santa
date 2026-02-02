@@ -8,7 +8,7 @@ let participantOptions = participants.map(p =>
 let exclusionRows = exclusions.map(e => {
   const deleteForm = drawExists
     ? '<span class="text-muted">-</span>'
-    : `<form action="/organizer/exclusions/${e.id}/delete" method="POST" style="display:inline;"><button type="submit" class="btn btn-small btn-danger">Supprimer</button></form>`;
+    : `<form action="/organizer/groups/${group.id}/exclusions/${e.id}/delete" method="POST" style="display:inline;"><button type="submit" class="btn btn-small btn-danger">Supprimer</button></form>`;
   return `<tr><td><strong>${escapeHtml(e.giver_name)}</strong></td><td class="arrow-cell">ne peut pas offrir a</td><td><strong>${escapeHtml(e.receiver_name)}</strong></td><td>${deleteForm}</td></tr>`;
 }).join('');
 
@@ -29,7 +29,7 @@ const body = `
   ${!drawExists && participants.length >= 2 ? `
   <section class="add-exclusion-section">
     <h2>Ajouter une regle</h2>
-    <form action="/organizer/exclusions/add" method="POST" class="exclusion-form">
+    <form action="/organizer/groups/${group.id}/exclusions/add" method="POST" class="exclusion-form">
       <div class="form-row">
         <div class="form-group">
           <label for="giver_id">Cette personne</label>
@@ -79,8 +79,8 @@ const body = `
   </section>
 
   <div class="back-link">
-    <a href="/organizer/dashboard" class="btn btn-secondary">Retour au tableau de bord</a>
+    <a href="/organizer/groups/${group.id}" class="btn btn-secondary">Retour au tableau de bord</a>
   </div>
 </div>
 ` %>
-<%- include('../layout', { title, organizer, body }) %>
+<%- include('../layout', { title, organizer: locals.organizer, body }) %>

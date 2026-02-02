@@ -1,0 +1,98 @@
+<%
+const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
+
+let assignmentRows = '';
+if (assignments && assignments.length > 0) {
+  assignmentRows = assignments.map(a => {
+    const emailStatus = a.email_sent
+      ? '<span class="badge badge-success">Envoye</span>'
+      : '<span class="badge badge-pending">En attente</span>';
+    return `<tr><td>${escapeHtml(a.giver_name)}</td><td>${escapeHtml(a.giver_email)}</td><td>${emailStatus}</td></tr>`;
+  }).join('');
+}
+
+const body = `
+<div class="admin-page">
+  <h1>Tirage au sort</h1>
+
+  ${message ? '<div class="alert alert-success">' + escapeHtml(message) + '</div>' : ''}
+  ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
+
+  <div class="draw-status">
+    <div class="status-card">
+      <h3>Participants</h3>
+      <p class="status-value">${participantCount}</p>
+    </div>
+    <div class="status-card">
+      <h3>Statut du tirage</h3>
+      <p class="status-value ${drawExists ? 'status-done' : 'status-pending'}">${drawExists ? 'Effectue' : 'En attente'}</p>
+    </div>
+    <div class="status-card">
+      <h3>Emails</h3>
+      <p class="status-value">${sentEmails} / ${participantCount} envoyes</p>
+    </div>
+  </div>
+
+  ${!drawExists ? `
+  <section class="draw-action-section">
+    <h2>Lancer le tirage</h2>
+    ${!canDraw.possible ? '<div class="alert alert-warning">' + escapeHtml(canDraw.reason) + '</div>' : ''}
+    ${participantCount < 2 ? '<div class="alert alert-warning">Il faut au moins 2 participants pour effectuer un tirage.</div>' : `
+    <p>Une fois le tirage effectue :</p>
+    <ul>
+      <li>Chaque participant sera assigne a une autre personne</li>
+      <li>Les assignations sont chiffrees et vous ne pourrez pas les voir</li>
+      <li>Vous pourrez envoyer les emails aux participants</li>
+    </ul>
+    <form action="/organizer/groups/${group.id}/draw/perform" method="POST" class="draw-form" onsubmit="return confirm('Lancer le tirage ? Cette action ne peut pas etre facilement annulee.')">
+      <button type="submit" class="btn btn-primary btn-large" ${participantCount < 2 || !canDraw.possible ? 'disabled' : ''}>Lancer le tirage</button>
+    </form>
+    `}
+  </section>
+  ` : `
+  <section class="draw-results-section">
+    <h2>Resultats du tirage</h2>
+    <p class="security-notice">Les assignations sont chiffrees. Vous pouvez voir qui participe mais pas qui offre a qui.</p>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Participant</th>
+            <th>Email</th>
+            <th>Email envoye</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${assignmentRows}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="email-section">
+    <h2>Envoi des emails</h2>
+    ${!smtpConfigured ? '<div class="alert alert-warning">SMTP non configure. Configurez les variables SMTP_HOST, SMTP_USER et SMTP_PASS.</div>' : '<p>Envoyez les emails a tous les participants pour leur reveler leur Secret Santa.</p>'}
+    <div class="email-actions">
+      ${pendingEmails > 0 ? `
+      <form action="/organizer/groups/${group.id}/draw/send-emails" method="POST" style="display:inline;">
+        <button type="submit" class="btn btn-primary" ${!smtpConfigured ? 'disabled' : ''}>Envoyer ${pendingEmails} email(s)</button>
+      </form>
+      ` : '<p class="text-success">Tous les emails ont ete envoyes !</p>'}
+    </div>
+  </section>
+
+  <section class="reset-section">
+    <h2>Reinitialiser</h2>
+    <p class="text-warning">Attention : cette action supprimera le tirage actuel et tous les emails envoyes seront perdus.</p>
+    <form action="/organizer/groups/${group.id}/draw/reset" method="POST" onsubmit="return confirm('Confirmer la suppression du tirage ?')">
+      <button type="submit" class="btn btn-danger">Reinitialiser le tirage</button>
+    </form>
+  </section>
+  `}
+
+  <div class="back-link">
+    <a href="/organizer/groups/${group.id}" class="btn btn-secondary">Retour au tableau de bord</a>
+  </div>
+</div>
+` %>
+<%- include('../layout', { title, organizer: locals.organizer, body }) %>

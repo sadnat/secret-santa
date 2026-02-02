@@ -62,41 +62,25 @@ const Assignment = {
   },
 
   /**
-   * Clear all assignments (global)
+   * Clear all assignments for a specific group
    */
-  clearAll() {
-    const stmt = db.prepare('DELETE FROM assignments');
-    return stmt.run();
-  },
-
-  /**
-   * Clear all assignments for a specific organizer
-   */
-  clearAllByOrganizer(organizerId) {
+  clearAllByGroup(groupId) {
     const stmt = db.prepare(`
       DELETE FROM assignments
-      WHERE giver_id IN (SELECT id FROM participants WHERE organizer_id = ?)
+      WHERE giver_id IN (SELECT id FROM participants WHERE group_id = ?)
     `);
-    return stmt.run(organizerId);
+    return stmt.run(groupId);
   },
 
   /**
-   * Check if draw has been made (global)
+   * Check if draw has been made for a specific group
    */
-  drawExists() {
-    const stmt = db.prepare('SELECT COUNT(*) as count FROM assignments');
-    return stmt.get().count > 0;
-  },
-
-  /**
-   * Check if draw has been made for a specific organizer
-   */
-  drawExistsByOrganizer(organizerId) {
+  drawExistsByGroup(groupId) {
     const stmt = db.prepare(`
       SELECT COUNT(*) as count FROM assignments
-      WHERE giver_id IN (SELECT id FROM participants WHERE organizer_id = ?)
+      WHERE giver_id IN (SELECT id FROM participants WHERE group_id = ?)
     `);
-    return stmt.get(organizerId).count > 0;
+    return stmt.get(groupId).count > 0;
   },
 
   /**
@@ -114,9 +98,9 @@ const Assignment = {
   },
 
   /**
-   * Get all assignments (without decrypting - for admin view)
+   * Get all assignments for a specific group
    */
-  findAllForAdmin() {
+  findAllForGroup(groupId) {
     const stmt = db.prepare(`
       SELECT
         a.id,
@@ -127,76 +111,29 @@ const Assignment = {
         p.email as giver_email
       FROM assignments a
       JOIN participants p ON a.giver_id = p.id
+      WHERE p.group_id = ?
       ORDER BY p.first_name, p.last_name
     `);
-    return stmt.all();
+    return stmt.all(groupId);
   },
 
   /**
-   * Get all assignments for a specific organizer
+   * Get all decrypted assignments for a specific group
    */
-  findAllForOrganizer(organizerId) {
-    const stmt = db.prepare(`
-      SELECT
-        a.id,
-        a.giver_id,
-        a.email_sent,
-        a.created_at,
-        p.first_name || ' ' || p.last_name as giver_name,
-        p.email as giver_email
-      FROM assignments a
-      JOIN participants p ON a.giver_id = p.id
-      WHERE p.organizer_id = ?
-      ORDER BY p.first_name, p.last_name
-    `);
-    return stmt.all(organizerId);
-  },
-
-  /**
-   * Get all assignments with decrypted receivers (for email sending)
-   */
-  findAllDecrypted() {
-    const stmt = db.prepare(`
-      SELECT
-        a.*,
-        g.first_name as giver_first_name,
-        g.last_name as giver_last_name,
-        g.email as giver_email
-      FROM assignments a
-      JOIN participants g ON a.giver_id = g.id
-    `);
-
-    const assignments = stmt.all();
-
-    return assignments.map(a => {
-      const receiverId = this.decrypt(a.encrypted_receiver);
-      const receiver = db.prepare('SELECT * FROM participants WHERE id = ?').get(receiverId);
-
-      return {
-        ...a,
-        receiver_id: receiverId,
-        receiver
-      };
-    });
-  },
-
-  /**
-   * Get all decrypted assignments for a specific organizer
-   */
-  findAllDecryptedByOrganizer(organizerId) {
+  findAllDecryptedByGroup(groupId) {
     const stmt = db.prepare(`
       SELECT
         a.*,
         g.first_name as giver_first_name,
         g.last_name as giver_last_name,
         g.email as giver_email,
-        g.organizer_id
+        g.group_id
       FROM assignments a
       JOIN participants g ON a.giver_id = g.id
-      WHERE g.organizer_id = ?
+      WHERE g.group_id = ?
     `);
 
-    const assignments = stmt.all(organizerId);
+    const assignments = stmt.all(groupId);
 
     return assignments.map(a => {
       const receiverId = this.decrypt(a.encrypted_receiver);
@@ -219,43 +156,27 @@ const Assignment = {
   },
 
   /**
-   * Count pending emails (global)
+   * Count pending emails for a specific group
    */
-  countPendingEmails() {
-    const stmt = db.prepare('SELECT COUNT(*) as count FROM assignments WHERE email_sent = 0');
-    return stmt.get().count;
-  },
-
-  /**
-   * Count pending emails for a specific organizer
-   */
-  countPendingEmailsByOrganizer(organizerId) {
+  countPendingEmailsByGroup(groupId) {
     const stmt = db.prepare(`
       SELECT COUNT(*) as count FROM assignments
       WHERE email_sent = 0
-      AND giver_id IN (SELECT id FROM participants WHERE organizer_id = ?)
+      AND giver_id IN (SELECT id FROM participants WHERE group_id = ?)
     `);
-    return stmt.get(organizerId).count;
+    return stmt.get(groupId).count;
   },
 
   /**
-   * Count sent emails (global)
+   * Count sent emails for a specific group
    */
-  countSentEmails() {
-    const stmt = db.prepare('SELECT COUNT(*) as count FROM assignments WHERE email_sent = 1');
-    return stmt.get().count;
-  },
-
-  /**
-   * Count sent emails for a specific organizer
-   */
-  countSentEmailsByOrganizer(organizerId) {
+  countSentEmailsByGroup(groupId) {
     const stmt = db.prepare(`
       SELECT COUNT(*) as count FROM assignments
       WHERE email_sent = 1
-      AND giver_id IN (SELECT id FROM participants WHERE organizer_id = ?)
+      AND giver_id IN (SELECT id FROM participants WHERE group_id = ?)
     `);
-    return stmt.get(organizerId).count;
+    return stmt.get(groupId).count;
   }
 };
 

@@ -1,0 +1,76 @@
+<%
+const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
+
+let participantRows = '';
+if (participants.length > 0) {
+  participantRows = participants.map(p => {
+    const wishes = [p.wish1, p.wish2, p.wish3].filter(Boolean).map(w => escapeHtml(w)).join(', ');
+    const date = new Date(p.created_at).toLocaleDateString('fr-FR');
+    const deleteForm = drawExists
+      ? '<span class="text-muted">-</span>'
+      : `<form action="/organizer/groups/${group.id}/participants/${p.id}/delete" method="POST" style="display:inline;" onsubmit="return confirm('Supprimer ?')"><button type="submit" class="btn btn-small btn-danger">Supprimer</button></form>`;
+    return `<tr><td>${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}</td><td>${escapeHtml(p.email)}</td><td>${wishes || '-'}</td><td>${date}</td><td>${deleteForm}</td></tr>`;
+  }).join('');
+}
+
+const body = `
+<div class="admin-page">
+  <div class="header-with-actions">
+    <h1>Tableau de bord</h1>
+    <a href="/organizer/dashboard" class="btn btn-small btn-secondary">&larr; Retour aux groupes</a>
+  </div>
+  <p class="group-info">Groupe : <strong>${escapeHtml(group.name)}</strong></p>
+
+  ${message ? '<div class="alert alert-success">' + escapeHtml(message) + '</div>' : ''}
+  ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
+
+  <div class="admin-stats">
+    <div class="stat-card">
+      <span class="stat-value">${participants.length}</span>
+      <span class="stat-label">Participants</span>
+    </div>
+    <div class="stat-card ${drawExists ? 'stat-success' : ''}">
+      <span class="stat-value">${drawExists ? 'Oui' : 'Non'}</span>
+      <span class="stat-label">Tirage effectue</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">${sentEmails} / ${participants.length}</span>
+      <span class="stat-label">Emails envoyes</span>
+    </div>
+    <div class="stat-card ${smtpConfigured ? 'stat-success' : 'stat-warning'}">
+      <span class="stat-value">${smtpConfigured ? 'Oui' : 'Non'}</span>
+      <span class="stat-label">SMTP configure</span>
+    </div>
+  </div>
+
+  <div class="admin-actions">
+    <a href="/organizer/groups/${group.id}/settings" class="btn btn-secondary">Parametres / Lien invitation</a>
+    <a href="/organizer/groups/${group.id}/exclusions" class="btn btn-secondary">Gerer les exclusions</a>
+    <a href="/organizer/groups/${group.id}/draw" class="btn btn-primary">Tirage au sort</a>
+  </div>
+
+  <section class="participants-section">
+    <h2>Liste des participants</h2>
+
+    ${participants.length === 0 ? '<p class="empty-message">Aucun participant inscrit pour le moment. Partagez votre lien depuis les parametres.</p>' : `
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Email</th>
+            <th>Souhaits</th>
+            <th>Inscrit le</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${participantRows}
+        </tbody>
+      </table>
+    </div>
+    `}
+  </section>
+</div>
+` %>
+<%- include('../layout', { title, organizer: locals.organizer, body }) %>

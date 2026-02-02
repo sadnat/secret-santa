@@ -1,5 +1,6 @@
 const { db, generateGroupCode } = require('../config/database');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 
 const SALT_ROUNDS = 10;
 
@@ -9,11 +10,13 @@ const Organizer = {
    */
   async create(data) {
     const passwordHash = await bcrypt.hash(data.password, SALT_ROUNDS);
-    const groupCode = generateGroupCode();
+    // Legacy support: generate a code to satisfy NOT NULL constraint
+    const legacyCode = generateGroupCode(); 
+    const verificationToken = crypto.randomBytes(32).toString('hex');
 
     const stmt = db.prepare(`
-      INSERT INTO organizers (email, password_hash, first_name, last_name, group_name, group_code)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO organizers (email, password_hash, first_name, last_name, group_name, group_code, is_verified, verification_token)
+      VALUES (?, ?, ?, ?, ?, ?, 0, ?)
     `);
 
     const result = stmt.run(
@@ -21,14 +24,31 @@ const Organizer = {
       passwordHash,
       data.first_name.trim(),
       data.last_name.trim(),
-      data.group_name.trim(),
-      groupCode
+      'Legacy Placeholder', // Placeholder
+      legacyCode,
+      verificationToken
     );
 
     return {
       id: Number(result.lastInsertRowid),
-      groupCode
+      verificationToken
     };
+  },
+
+  /**
+   * Verify email with token
+   */
+  verifyEmail(token) {
+    const stmt = db.prepare('SELECT id FROM organizers WHERE verification_token = ?');
+    const organizer = stmt.get(token);
+    
+    if (!organizer) {
+      return false;
+    }
+
+    const update = db.prepare('UPDATE organizers SET is_verified = 1, verification_token = NULL WHERE id = ?');
+    update.run(organizer.id);
+    return true;
   },
 
   /**
@@ -72,34 +92,11 @@ const Organizer = {
   },
 
   /**
-   * Find organizer by group code
-   */
-  findByCode(code) {
-    const stmt = db.prepare('SELECT * FROM organizers WHERE group_code = ?');
-    const organizer = stmt.get(code.toUpperCase().trim());
-    if (organizer) {
-      const { password_hash, ...safeOrganizer } = organizer;
-      return safeOrganizer;
-    }
-    return null;
-  },
-
-  /**
    * Check if email exists
    */
   emailExists(email) {
     const stmt = db.prepare('SELECT id FROM organizers WHERE email = ?');
     return stmt.get(email.toLowerCase().trim()) !== undefined;
-  },
-
-  /**
-   * Regenerate group code for an organizer
-   */
-  updateGroupCode(id) {
-    const newCode = generateGroupCode();
-    const stmt = db.prepare('UPDATE organizers SET group_code = ? WHERE id = ?');
-    stmt.run(newCode, id);
-    return newCode;
   },
 
   /**
@@ -117,10 +114,6 @@ const Organizer = {
       updates.push('last_name = ?');
       values.push(data.last_name.trim());
     }
-    if (data.group_name) {
-      updates.push('group_name = ?');
-      values.push(data.group_name.trim());
-    }
 
     if (updates.length === 0) return;
 
@@ -130,53 +123,10 @@ const Organizer = {
   },
 
   /**
-   * Archive a group
-   */
-  archive(id) {
-    const stmt = db.prepare('UPDATE organizers SET archived_at = CURRENT_TIMESTAMP WHERE id = ?');
-    return stmt.run(id);
-  },
-
-  /**
-   * Unarchive a group
-   */
-  unarchive(id) {
-    const stmt = db.prepare('UPDATE organizers SET archived_at = NULL WHERE id = ?');
-    return stmt.run(id);
-  },
-
-  /**
-   * Check if organizer is archived
-   */
-  isArchived(id) {
-    const stmt = db.prepare('SELECT archived_at FROM organizers WHERE id = ?');
-    const result = stmt.get(id);
-    return result && result.archived_at !== null;
-  },
-
-  /**
    * Delete organizer and all associated data
    */
   delete(id) {
-    // Delete in order due to foreign key constraints
-    // 1. Delete assignments for participants of this organizer
-    db.prepare(`
-      DELETE FROM assignments
-      WHERE giver_id IN (SELECT id FROM participants WHERE organizer_id = ?)
-    `).run(id);
-
-    // 2. Delete exclusions for participants of this organizer
-    db.prepare(`
-      DELETE FROM exclusions
-      WHERE giver_id IN (SELECT id FROM participants WHERE organizer_id = ?)
-    `).run(id);
-
-    // 3. Delete participants
-    db.prepare('DELETE FROM participants WHERE organizer_id = ?').run(id);
-
-    // 4. Delete organizer
     db.prepare('DELETE FROM organizers WHERE id = ?').run(id);
-
     return true;
   },
 

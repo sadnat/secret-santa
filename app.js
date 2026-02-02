@@ -6,6 +6,7 @@ const path = require('path');
 const db = require('./config/database');
 const indexRoutes = require('./routes/index');
 const organizerRoutes = require('./routes/organizer');
+const groupRoutes = require('./routes/group');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -38,6 +39,7 @@ app.use((req, res, next) => {
 });
 
 // Routes
+app.use('/organizer/groups/:groupId', groupRoutes);
 app.use('/organizer', organizerRoutes);
 app.use('/', indexRoutes);
 

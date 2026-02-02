@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Participant = require('../models/participant');
-const Organizer = require('../models/organizer');
+const Group = require('../models/group');
 
 /**
  * Home page
@@ -43,9 +43,9 @@ router.post('/join', (req, res) => {
  */
 router.get('/join/:code', (req, res) => {
   const { code } = req.params;
-  const organizer = Organizer.findByCode(code);
+  const group = Group.findByCode(code);
 
-  if (!organizer) {
+  if (!group) {
     return res.render('error', {
       title: 'Code invalide',
       message: 'Ce code d\'invitation n\'existe pas ou n\'est plus valide.',
@@ -55,7 +55,7 @@ router.get('/join/:code', (req, res) => {
 
   res.render('register', {
     title: 'Inscription',
-    organizer,
+    group,
     groupCode: code,
     error: null,
     formData: {}
@@ -67,9 +67,9 @@ router.get('/join/:code', (req, res) => {
  */
 router.post('/join/:code', (req, res) => {
   const { code } = req.params;
-  const organizer = Organizer.findByCode(code);
+  const group = Group.findByCode(code);
 
-  if (!organizer) {
+  if (!group) {
     return res.render('error', {
       title: 'Code invalide',
       message: 'Ce code d\'invitation n\'existe pas ou n\'est plus valide.',
@@ -94,14 +94,14 @@ router.post('/join/:code', (req, res) => {
     errors.push('Veuillez entrer une adresse email valide.');
   }
 
-  if (errors.length === 0 && Participant.emailExistsForOrganizer(email, organizer.id)) {
+  if (errors.length === 0 && Participant.emailExistsForGroup(email, group.id)) {
     errors.push('Cette adresse email est deja inscrite dans ce groupe.');
   }
 
   if (errors.length > 0) {
     return res.render('register', {
       title: 'Inscription',
-      organizer,
+      group,
       groupCode: code,
       error: errors.join(' '),
       formData: req.body
@@ -116,15 +116,15 @@ router.post('/join/:code', (req, res) => {
       wish1,
       wish2,
       wish3,
-      organizer_id: organizer.id
+      group_id: group.id
     });
 
-    res.redirect(`/success?group=${encodeURIComponent(organizer.group_name)}`);
+    res.redirect(`/success?group=${encodeURIComponent(group.name)}`);
   } catch (error) {
     console.error('Registration error:', error);
     res.render('register', {
       title: 'Inscription',
-      organizer,
+      group,
       groupCode: code,
       error: 'Une erreur est survenue lors de l\'inscription. Veuillez reessayer.',
       formData: req.body

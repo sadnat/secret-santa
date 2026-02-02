@@ -4,6 +4,7 @@ const body = `
 <div class="form-page login-page">
   <h1>Connexion Organisateur</h1>
 
+  ${typeof message !== 'undefined' && message ? '<div class="alert alert-success">' + escapeHtml(message) + '</div>' : ''}
   ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
 
   <form action="/organizer/login" method="POST" class="login-form">
