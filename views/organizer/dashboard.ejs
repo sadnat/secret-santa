@@ -6,12 +6,16 @@ if (groups.length > 0) {
   groupRows = groups.map(g => {
     const date = new Date(g.created_at).toLocaleDateString('fr-FR');
     const status = g.archived_at ? '<span class="status-archived">Archive</span>' : '<span class="status-active">Actif</span>';
+    const deleteForm = `<form action="/organizer/groups/${g.id}/delete" method="POST" style="display:inline;" onsubmit="return confirm('Etes-vous sur de vouloir supprimer le groupe \\'${escapeHtml(g.name).replace(/'/g, "\\'")}\\' ? Cette action est irreversible et supprimera tous les participants et tirages associes.')"><button type="submit" class="btn btn-small btn-danger">Supprimer</button></form>`;
     return `<tr>
       <td><strong><a href="/organizer/groups/${g.id}">${escapeHtml(g.name)}</a></strong></td>
       <td><code>${escapeHtml(g.code)}</code></td>
       <td>${date}</td>
       <td>${status}</td>
-      <td><a href="/organizer/groups/${g.id}" class="btn btn-small btn-primary">Gerer</a></td>
+      <td>
+        <a href="/organizer/groups/${g.id}" class="btn btn-small btn-primary">Gerer</a>
+        ${deleteForm}
+      </td>
     </tr>`;
   }).join('');
 }

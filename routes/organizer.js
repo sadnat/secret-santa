@@ -255,6 +255,28 @@ router.post('/groups/create', requireAuth, (req, res) => {
   }
 });
 
+/**
+ * Delete group
+ */
+router.post('/groups/:id/delete', requireAuth, (req, res) => {
+  const { id } = req.params;
+  const organizerId = getOrganizerId(req);
+
+  try {
+    // Verify group belongs to this organizer
+    const group = Group.findByIdAndOrganizer(id, organizerId);
+    if (!group) {
+      return res.redirect('/organizer/dashboard?error=' + encodeURIComponent('Groupe non trouve.'));
+    }
+
+    Group.delete(id);
+    res.redirect('/organizer/dashboard?message=' + encodeURIComponent('Groupe supprime avec succes.'));
+  } catch (error) {
+    console.error('Delete group error:', error);
+    res.redirect('/organizer/dashboard?error=' + encodeURIComponent('Erreur lors de la suppression du groupe.'));
+  }
+});
+
 // ==================== ACCOUNT SETTINGS ====================
 
 /**

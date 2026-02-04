@@ -39,7 +39,7 @@ app.use((req, res, next) => {
 });
 
 // Routes
-app.use('/organizer/groups/:groupId', groupRoutes);
+app.use('/organizer/groups/:groupId(\\d+)', groupRoutes); // Only match numeric groupId
 app.use('/organizer', organizerRoutes);
 app.use('/', indexRoutes);
 
