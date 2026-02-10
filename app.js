@@ -7,6 +7,7 @@ const db = require('./config/database');
 const indexRoutes = require('./routes/index');
 const organizerRoutes = require('./routes/organizer');
 const groupRoutes = require('./routes/group');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,6 +40,7 @@ app.use((req, res, next) => {
 });
 
 // Routes
+app.use('/admin', adminRoutes);
 app.use('/organizer/groups/:groupId(\\d+)', groupRoutes); // Only match numeric groupId
 app.use('/organizer', organizerRoutes);
 app.use('/', indexRoutes);

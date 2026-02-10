@@ -1,0 +1,69 @@
+<%
+const body = `
+<div class="container admin-page">
+  <h1>Administration</h1>
+  
+  <div class="admin-stats">
+    <div class="stat-card">
+      <h3>${organizerCount}</h3>
+      <p>Utilisateurs</p>
+      <a href="/admin/users" class="btn btn-secondary">Gerer</a>
+    </div>
+    <div class="stat-card">
+      <h3>${groupCount}</h3>
+      <p>Groupes</p>
+      <a href="/admin/groups" class="btn btn-secondary">Gerer</a>
+    </div>
+  </div>
+
+  <div class="admin-nav">
+    <h2>Actions rapides</h2>
+    <ul>
+      <li><a href="/admin/users">Voir tous les utilisateurs</a></li>
+      <li><a href="/admin/groups">Voir tous les groupes</a></li>
+      <li><a href="/organizer/dashboard">Retour a mes groupes</a></li>
+    </ul>
+  </div>
+</div>
+
+<style>
+  .admin-stats {
+    display: flex;
+    gap: 2rem;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+  }
+  .stat-card {
+    background: var(--card-bg, #fff);
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    min-width: 150px;
+  }
+  .stat-card h3 {
+    font-size: 2.5rem;
+    margin: 0;
+    color: var(--primary-color, #c41e3a);
+  }
+  .stat-card p {
+    margin: 0.5rem 0 1rem;
+    color: #666;
+  }
+  .admin-nav {
+    margin-top: 2rem;
+  }
+  .admin-nav ul {
+    list-style: none;
+    padding: 0;
+  }
+  .admin-nav li {
+    margin: 0.5rem 0;
+  }
+  .admin-nav a {
+    color: var(--primary-color, #c41e3a);
+  }
+</style>
+`;
+%>
+<%- include('../layout', { title: 'Administration', organizer, body }) %>

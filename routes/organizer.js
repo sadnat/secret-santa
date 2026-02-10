@@ -182,11 +182,19 @@ router.post('/login', async (req, res) => {
         });
       }
 
+      // Auto-promote admin if ADMIN_EMAIL matches
+      const adminEmail = process.env.ADMIN_EMAIL;
+      if (adminEmail && organizer.email === adminEmail.toLowerCase().trim() && organizer.is_admin !== 1) {
+        Organizer.setAdmin(organizer.id, true);
+        organizer.is_admin = 1;
+      }
+
       req.session.organizer = {
         id: organizer.id,
         email: organizer.email,
         firstName: organizer.first_name,
-        lastName: organizer.last_name
+        lastName: organizer.last_name,
+        isAdmin: organizer.is_admin === 1
       };
       return req.session.save((err) => {
         if (err) {

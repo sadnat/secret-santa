@@ -16,6 +16,9 @@
         <% if (typeof organizer !== 'undefined' && organizer) { %>
           <a href="/organizer/dashboard">Mes groupes</a>
           <a href="/organizer/settings">Mon compte</a>
+          <% if (organizer.isAdmin) { %>
+            <a href="/admin" class="admin-link">Administration</a>
+          <% } %>
           <a href="/organizer/logout">Deconnexion</a>
         <% } else { %>
           <a href="/join">Rejoindre un groupe</a>

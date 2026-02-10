@@ -54,6 +54,24 @@ function initialize() {
     db.exec('ALTER TABLE organizers ADD COLUMN verification_token TEXT DEFAULT NULL');
   }
 
+  // Add is_admin column
+  const hasIsAdmin = orgColumns.some(col => col.name === 'is_admin');
+  if (!hasIsAdmin) {
+    db.exec('ALTER TABLE organizers ADD COLUMN is_admin BOOLEAN DEFAULT 0');
+  }
+
+  // Bootstrap admin from ADMIN_EMAIL environment variable
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (adminEmail) {
+    const existingAdmin = db.prepare('SELECT id FROM organizers WHERE email = ? AND is_admin = 1').get(adminEmail);
+    if (!existingAdmin) {
+      const result = db.prepare('UPDATE organizers SET is_admin = 1 WHERE email = ?').run(adminEmail);
+      if (result.changes > 0) {
+        console.log(`Admin: Promoted ${adminEmail} to admin.`);
+      }
+    }
+  }
+
   // Create groups table
   db.exec(`
     CREATE TABLE IF NOT EXISTS groups (

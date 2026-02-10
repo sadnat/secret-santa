@@ -129,6 +129,33 @@ const Group = {
     // 4. Delete group
     const stmt = db.prepare('DELETE FROM groups WHERE id = ?');
     return stmt.run(id);
+  },
+
+  // ===== Admin Methods =====
+
+  /**
+   * Get all groups with organizer info (for admin panel)
+   */
+  findAllWithOrganizer() {
+    const stmt = db.prepare(`
+      SELECT 
+        g.id, g.name, g.code, g.archived_at, g.created_at,
+        o.id as organizer_id, o.email as organizer_email, 
+        o.first_name as organizer_first_name, o.last_name as organizer_last_name,
+        (SELECT COUNT(*) FROM participants WHERE group_id = g.id) as participant_count
+      FROM groups g
+      JOIN organizers o ON g.organizer_id = o.id
+      ORDER BY g.created_at DESC
+    `);
+    return stmt.all();
+  },
+
+  /**
+   * Count all groups
+   */
+  countAll() {
+    const stmt = db.prepare('SELECT COUNT(*) as count FROM groups');
+    return stmt.get().count;
   }
 };
 

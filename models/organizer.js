@@ -140,6 +140,53 @@ const Organizer = {
       return false;
     }
     return bcrypt.compare(password, organizer.password_hash);
+  },
+
+  // ===== Admin Methods =====
+
+  /**
+   * Get all organizers (for admin panel)
+   */
+  findAll() {
+    const stmt = db.prepare(`
+      SELECT id, email, first_name, last_name, is_verified, is_admin, created_at
+      FROM organizers
+      ORDER BY created_at DESC
+    `);
+    return stmt.all();
+  },
+
+  /**
+   * Count all organizers
+   */
+  countAll() {
+    const stmt = db.prepare('SELECT COUNT(*) as count FROM organizers');
+    return stmt.get().count;
+  },
+
+  /**
+   * Set admin status for an organizer
+   */
+  setAdmin(id, isAdmin) {
+    const stmt = db.prepare('UPDATE organizers SET is_admin = ? WHERE id = ?');
+    return stmt.run(isAdmin ? 1 : 0, id);
+  },
+
+  /**
+   * Check if an organizer is admin
+   */
+  isAdmin(id) {
+    const stmt = db.prepare('SELECT is_admin FROM organizers WHERE id = ?');
+    const result = stmt.get(id);
+    return result ? result.is_admin === 1 : false;
+  },
+
+  /**
+   * Delete organizer by ID (admin action)
+   */
+  deleteById(id) {
+    const stmt = db.prepare('DELETE FROM organizers WHERE id = ?');
+    return stmt.run(id);
   }
 };
 

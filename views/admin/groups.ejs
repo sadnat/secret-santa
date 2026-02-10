@@ -1,0 +1,112 @@
+<%
+const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
+
+let groupRows = groups.map(group => {
+  const date = new Date(group.created_at).toLocaleDateString('fr-FR');
+  return `<tr>
+    <td>${group.id}</td>
+    <td>${escapeHtml(group.name)}</td>
+    <td><code>${escapeHtml(group.code)}</code></td>
+    <td>${escapeHtml(group.organizer_first_name)} ${escapeHtml(group.organizer_last_name)}<br><small>${escapeHtml(group.organizer_email)}</small></td>
+    <td>${group.participant_count}</td>
+    <td>${date}</td>
+    <td class="actions">
+      <form action="/admin/groups/${group.id}/delete" method="POST" style="display:inline;" 
+            onsubmit="return confirm('Etes-vous sur de vouloir supprimer ce groupe ? Tous les participants et tirages seront supprimes. Cette action est irreversible.');">
+        <button type="submit" class="btn btn-small btn-danger">Supprimer</button>
+      </form>
+    </td>
+  </tr>`;
+}).join('');
+
+const body = `
+<div class="container admin-page">
+  <h1>Gestion des groupes</h1>
+  
+  <p><a href="/admin">&larr; Retour au tableau de bord</a></p>
+
+  ${success ? '<div class="alert alert-success">' + escapeHtml(success) + '</div>' : ''}
+  ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
+
+  <div class="table-wrapper">
+    <table class="admin-table data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nom</th>
+          <th>Code</th>
+          <th>Organisateur</th>
+          <th>Participants</th>
+          <th>Cree le</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${groupRows}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+  }
+  .admin-table th, .admin-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+  .admin-table th {
+    background: #f5f5f5;
+    font-weight: 600;
+  }
+  .admin-table tr:hover {
+    background: #fafafa;
+  }
+  .admin-table code {
+    background: #e9ecef;
+    padding: 0.125rem 0.25rem;
+    border-radius: 3px;
+    font-family: monospace;
+  }
+  .admin-table small {
+    color: #666;
+  }
+  .btn-small {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+  }
+  .btn-danger {
+    background: #dc3545;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  .btn-danger:hover {
+    background: #c82333;
+  }
+  .actions {
+    white-space: nowrap;
+  }
+  .alert {
+    padding: 1rem;
+    border-radius: 4px;
+    margin: 1rem 0;
+  }
+  .alert-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+  .alert-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
+</style>
+`;
+%>
+<%- include('../layout', { title: 'Gestion des groupes', organizer, body }) %>
