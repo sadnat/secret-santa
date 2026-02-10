@@ -11,6 +11,7 @@ const body = `
   ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
 
   <form action="${formAction}" method="POST" class="register-form">
+    <input type="hidden" name="_csrf" value="${csrfToken}">
     <div class="form-section">
       <h2>Informations personnelles</h2>
 

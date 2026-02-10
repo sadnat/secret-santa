@@ -1,7 +1,8 @@
 <%
 const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
 
-const inviteLink = `https://santa.twibox.fr/join/${group.code}`;
+const appUrl = typeof locals.appUrl !== 'undefined' && locals.appUrl ? locals.appUrl : 'https://santa.twibox.fr';
+const inviteLink = `${appUrl}/join/${group.code}`;
 const isArchived = group.archived_at !== null;
 
 const body = `
@@ -43,6 +44,7 @@ const body = `
     ${!isArchived ? `
     <form action="/organizer/groups/${group.id}/settings/regenerate-code" method="POST" class="regenerate-form"
           onsubmit="return confirm('Regenerer le code ? Le code actuel ne fonctionnera plus.')">
+      <input type="hidden" name="_csrf" value="${csrfToken}">
       <button type="submit" class="btn btn-secondary">Regenerer le code</button>
     </form>
     ` : ''}
@@ -53,12 +55,14 @@ const body = `
     ${isArchived ? `
     <p>Ce groupe est actuellement archive. Les participants ne peuvent plus s&#39;inscrire et aucune modification n&#39;est possible.</p>
     <form action="/organizer/groups/${group.id}/settings/unarchive" method="POST" class="archive-form">
+      <input type="hidden" name="_csrf" value="${csrfToken}">
       <button type="submit" class="btn btn-primary">Desarchiver le groupe</button>
     </form>
     ` : `
     <p>Archiver le groupe bloque toutes les modifications et empeche les nouvelles inscriptions. Vous pourrez desarchiver plus tard si necessaire.</p>
     <form action="/organizer/groups/${group.id}/settings/archive" method="POST" class="archive-form"
           onsubmit="return confirm('Archiver ce groupe ? Les modifications seront bloquees.')">
+      <input type="hidden" name="_csrf" value="${csrfToken}">
       <button type="submit" class="btn btn-warning">Archiver le groupe</button>
     </form>
     `}

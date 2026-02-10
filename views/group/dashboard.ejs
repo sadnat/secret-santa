@@ -8,7 +8,7 @@ if (participants.length > 0) {
     const date = new Date(p.created_at).toLocaleDateString('fr-FR');
     const deleteForm = drawExists
       ? '<span class="text-muted">-</span>'
-      : `<form action="/organizer/groups/${group.id}/participants/${p.id}/delete" method="POST" style="display:inline;" onsubmit="return confirm('Supprimer ?')"><button type="submit" class="btn btn-small btn-danger">Supprimer</button></form>`;
+      : `<form action="/organizer/groups/${group.id}/participants/${p.id}/delete" method="POST" style="display:inline;" onsubmit="return confirm('Supprimer ?')"><input type="hidden" name="_csrf" value="${csrfToken}"><button type="submit" class="btn btn-small btn-danger">Supprimer</button></form>`;
     return `<tr><td>${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}</td><td>${escapeHtml(p.email)}</td><td>${wishes || '-'}</td><td>${date}</td><td>${deleteForm}</td></tr>`;
   }).join('');
 }

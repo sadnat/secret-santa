@@ -20,10 +20,10 @@ const MailerService = {
         pass: process.env.SMTP_PASS
       },
       tls: {
-        rejectUnauthorized: false
+        rejectUnauthorized: true
       },
-      debug: true,
-      logger: true
+      debug: process.env.NODE_ENV !== 'production',
+      logger: process.env.NODE_ENV !== 'production'
     });
   },
 

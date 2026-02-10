@@ -14,9 +14,12 @@ const Organizer = {
     const legacyCode = generateGroupCode(); 
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
+    // Token expires in 24 hours
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
     const stmt = db.prepare(`
-      INSERT INTO organizers (email, password_hash, first_name, last_name, group_name, group_code, is_verified, verification_token)
-      VALUES (?, ?, ?, ?, ?, ?, 0, ?)
+      INSERT INTO organizers (email, password_hash, first_name, last_name, group_name, group_code, is_verified, verification_token, verification_token_expires_at)
+      VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
     `);
 
     const result = stmt.run(
@@ -26,7 +29,8 @@ const Organizer = {
       data.last_name.trim(),
       'Legacy Placeholder', // Placeholder
       legacyCode,
-      verificationToken
+      verificationToken,
+      expiresAt
     );
 
     return {
@@ -39,14 +43,22 @@ const Organizer = {
    * Verify email with token
    */
   verifyEmail(token) {
-    const stmt = db.prepare('SELECT id FROM organizers WHERE verification_token = ?');
+    const stmt = db.prepare('SELECT id, verification_token_expires_at FROM organizers WHERE verification_token = ?');
     const organizer = stmt.get(token);
     
     if (!organizer) {
       return false;
     }
 
-    const update = db.prepare('UPDATE organizers SET is_verified = 1, verification_token = NULL WHERE id = ?');
+    // Check token expiration (24h)
+    if (organizer.verification_token_expires_at) {
+      const expiresAt = new Date(organizer.verification_token_expires_at);
+      if (expiresAt < new Date()) {
+        return false;
+      }
+    }
+
+    const update = db.prepare('UPDATE organizers SET is_verified = 1, verification_token = NULL, verification_token_expires_at = NULL WHERE id = ?');
     update.run(organizer.id);
     return true;
   },
@@ -57,6 +69,8 @@ const Organizer = {
   async verifyPassword(email, password) {
     const organizer = this.findByEmail(email);
     if (!organizer) {
+      // Dummy bcrypt compare to prevent timing-based user enumeration
+      await bcrypt.compare(password, '$2b$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012');
       return null;
     }
 

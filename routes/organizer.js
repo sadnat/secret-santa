@@ -70,8 +70,12 @@ router.post('/register', async (req, res) => {
     errors.push('Le nom du groupe doit contenir au moins 2 caracteres.');
   }
 
-  if (!password || password.length < 6) {
-    errors.push('Le mot de passe doit contenir au moins 6 caracteres.');
+  if (!password || password.length < 8) {
+    errors.push('Le mot de passe doit contenir au moins 8 caracteres.');
+  }
+
+  if (password && password.length > 72) {
+    errors.push('Le mot de passe ne doit pas depasser 72 caracteres.');
   }
 
   if (password !== password_confirm) {
@@ -218,11 +222,15 @@ router.post('/login', async (req, res) => {
 });
 
 /**
- * Logout
+ * Logout (POST to prevent CSRF via img/link)
  */
-router.get('/logout', (req, res) => {
-  req.session.destroy();
-  res.redirect('/');
+router.post('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Logout error:', err);
+    }
+    res.redirect('/');
+  });
 });
 
 // ==================== DASHBOARD (Group List) ====================

@@ -9,6 +9,7 @@ const body = `
   ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
 
   <form action="/join" method="POST" class="join-form">
+    <input type="hidden" name="_csrf" value="${csrfToken}">
     <div class="form-group">
       <label for="code">Code d&#39;invitation</label>
       <input type="text" id="code" name="code" required

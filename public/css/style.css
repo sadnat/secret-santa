@@ -1098,3 +1098,17 @@ footer::before {
   color: #6c757d;
   font-weight: 600;
 }
+
+/* Logout button styled as nav link */
+.nav-logout-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+}
+.nav-logout-btn:hover {
+  text-decoration: underline;
+}

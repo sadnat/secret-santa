@@ -12,12 +12,14 @@ let userRows = users.map(user => {
     <td>${date}</td>
     <td class="actions">
       <form action="/admin/users/${user.id}/toggle-admin" method="POST" style="display:inline;">
+        <input type="hidden" name="_csrf" value="${csrfToken}">
         <button type="submit" class="btn btn-small ${user.is_admin ? 'btn-secondary' : 'btn-primary'}">
           ${user.is_admin ? 'Retirer admin' : 'Rendre admin'}
         </button>
       </form>
       <form action="/admin/users/${user.id}/delete" method="POST" style="display:inline;" 
             onsubmit="return confirm('Etes-vous sur de vouloir supprimer cet utilisateur ? Cette action est irreversible.');">
+        <input type="hidden" name="_csrf" value="${csrfToken}">
         <button type="submit" class="btn btn-small btn-danger">Supprimer</button>
       </form>
     </td>

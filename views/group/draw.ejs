@@ -45,6 +45,7 @@ const body = `
       <li>Vous pourrez envoyer les emails aux participants</li>
     </ul>
     <form action="/organizer/groups/${group.id}/draw/perform" method="POST" class="draw-form" onsubmit="return confirm('Lancer le tirage ? Cette action ne peut pas etre facilement annulee.')">
+      <input type="hidden" name="_csrf" value="${csrfToken}">
       <button type="submit" class="btn btn-primary btn-large" ${participantCount < 2 || !canDraw.possible ? 'disabled' : ''}>Lancer le tirage</button>
     </form>
     `}
@@ -75,6 +76,7 @@ const body = `
     <div class="email-actions">
       ${pendingEmails > 0 ? `
       <form action="/organizer/groups/${group.id}/draw/send-emails" method="POST" style="display:inline;">
+        <input type="hidden" name="_csrf" value="${csrfToken}">
         <button type="submit" class="btn btn-primary" ${!smtpConfigured ? 'disabled' : ''}>Envoyer ${pendingEmails} email(s)</button>
       </form>
       ` : '<p class="text-success">Tous les emails ont ete envoyes !</p>'}
@@ -85,6 +87,7 @@ const body = `
     <h2>Reinitialiser</h2>
     <p class="text-warning">Attention : cette action supprimera le tirage actuel et tous les emails envoyes seront perdus.</p>
     <form action="/organizer/groups/${group.id}/draw/reset" method="POST" onsubmit="return confirm('Confirmer la suppression du tirage ?')">
+      <input type="hidden" name="_csrf" value="${csrfToken}">
       <button type="submit" class="btn btn-danger">Reinitialiser le tirage</button>
     </form>
   </section>

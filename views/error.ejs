@@ -1,12 +1,11 @@
 <%
+const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
 const pageTitle = typeof title !== 'undefined' ? title : 'Erreur';
 const errorMessage = typeof message !== 'undefined' ? message : 'Une erreur est survenue';
-const errorDetails = typeof error !== 'undefined' && error && error.message ? error.message : '';
 const body = `
 <div class="error-page">
   <div class="error-icon">X</div>
-  <h1>${errorMessage}</h1>
-  ${errorDetails ? '<p class="error-details">' + errorDetails + '</p>' : ''}
+  <h1>${escapeHtml(errorMessage)}</h1>
   <a href="/" class="btn btn-primary">Retour a l&#39;accueil</a>
 </div>
 ` %>

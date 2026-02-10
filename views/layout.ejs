@@ -19,7 +19,10 @@
           <% if (organizer.isAdmin) { %>
             <a href="/admin" class="admin-link">Administration</a>
           <% } %>
-          <a href="/organizer/logout">Deconnexion</a>
+          <form action="/organizer/logout" method="POST" style="display:inline;">
+            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+            <button type="submit" class="nav-logout-btn">Deconnexion</button>
+          </form>
         <% } else { %>
           <a href="/join">Rejoindre un groupe</a>
           <a href="/organizer/login">Espace organisateur</a>

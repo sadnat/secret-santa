@@ -7,13 +7,13 @@ services:
     networks:
       - npm_default
     ports:
-      - "3033:3000"
+      - "127.0.0.1:3033:3000"
     environment:
+      - NODE_ENV=production
       - PORT=3000
       - APP_URL=${APP_URL:-http://localhost:3000}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
-      - SESSION_SECRET=${SESSION_SECRET:-secret_session_change_me}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-cle_chiffrement_32caracteres!!}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER:-}

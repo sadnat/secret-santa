@@ -54,6 +54,12 @@ function initialize() {
     db.exec('ALTER TABLE organizers ADD COLUMN verification_token TEXT DEFAULT NULL');
   }
 
+  // Add verification_token_expires_at column
+  const hasTokenExpiry = orgColumns.some(col => col.name === 'verification_token_expires_at');
+  if (!hasTokenExpiry) {
+    db.exec('ALTER TABLE organizers ADD COLUMN verification_token_expires_at DATETIME DEFAULT NULL');
+  }
+
   // Add is_admin column
   const hasIsAdmin = orgColumns.some(col => col.name === 'is_admin');
   if (!hasIsAdmin) {

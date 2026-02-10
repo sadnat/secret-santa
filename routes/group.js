@@ -195,7 +195,7 @@ router.post('/draw/perform', requireNotArchived, (req, res) => {
   }
 });
 
-router.post('/draw/reset', (req, res) => {
+router.post('/draw/reset', requireNotArchived, (req, res) => {
   try {
     Assignment.clearAllByGroup(req.group.id);
     res.redirect(`/organizer/groups/${req.group.id}/draw?message=` + encodeURIComponent('Tirage reinitialise.'));
@@ -205,7 +205,7 @@ router.post('/draw/reset', (req, res) => {
   }
 });
 
-router.post('/draw/send-emails', async (req, res) => {
+router.post('/draw/send-emails', requireNotArchived, async (req, res) => {
   if (!Assignment.drawExistsByGroup(req.group.id)) {
     return res.redirect(`/organizer/groups/${req.group.id}/draw?error=` + encodeURIComponent('Aucun tirage effectue.'));
   }

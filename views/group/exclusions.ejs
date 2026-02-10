@@ -8,7 +8,7 @@ let participantOptions = participants.map(p =>
 let exclusionRows = exclusions.map(e => {
   const deleteForm = drawExists
     ? '<span class="text-muted">-</span>'
-    : `<form action="/organizer/groups/${group.id}/exclusions/${e.id}/delete" method="POST" style="display:inline;"><button type="submit" class="btn btn-small btn-danger">Supprimer</button></form>`;
+    : `<form action="/organizer/groups/${group.id}/exclusions/${e.id}/delete" method="POST" style="display:inline;"><input type="hidden" name="_csrf" value="${csrfToken}"><button type="submit" class="btn btn-small btn-danger">Supprimer</button></form>`;
   return `<tr><td><strong>${escapeHtml(e.giver_name)}</strong></td><td class="arrow-cell">ne peut pas offrir a</td><td><strong>${escapeHtml(e.receiver_name)}</strong></td><td>${deleteForm}</td></tr>`;
 }).join('');
 
@@ -30,6 +30,7 @@ const body = `
   <section class="add-exclusion-section">
     <h2>Ajouter une regle</h2>
     <form action="/organizer/groups/${group.id}/exclusions/add" method="POST" class="exclusion-form">
+      <input type="hidden" name="_csrf" value="${csrfToken}">
       <div class="form-row">
         <div class="form-group">
           <label for="giver_id">Cette personne</label>

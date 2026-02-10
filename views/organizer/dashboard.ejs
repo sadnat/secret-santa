@@ -6,7 +6,7 @@ if (groups.length > 0) {
   groupRows = groups.map(g => {
     const date = new Date(g.created_at).toLocaleDateString('fr-FR');
     const status = g.archived_at ? '<span class="status-archived">Archive</span>' : '<span class="status-active">Actif</span>';
-    const deleteForm = `<form action="/organizer/groups/${g.id}/delete" method="POST" style="display:inline;" onsubmit="return confirm('Etes-vous sur de vouloir supprimer le groupe \\'${escapeHtml(g.name).replace(/'/g, "\\'")}\\' ? Cette action est irreversible et supprimera tous les participants et tirages associes.')"><button type="submit" class="btn btn-small btn-danger">Supprimer</button></form>`;
+    const deleteForm = `<form action="/organizer/groups/${g.id}/delete" method="POST" style="display:inline;" onsubmit="return confirm('Etes-vous sur de vouloir supprimer le groupe \\'${escapeHtml(g.name).replace(/'/g, "\\'")}\\' ? Cette action est irreversible et supprimera tous les participants et tirages associes.')"><input type="hidden" name="_csrf" value="${csrfToken}"><button type="submit" class="btn btn-small btn-danger">Supprimer</button></form>`;
     return `<tr>
       <td><strong><a href="/organizer/groups/${g.id}">${escapeHtml(g.name)}</a></strong></td>
       <td><code>${escapeHtml(g.code)}</code></td>
@@ -30,6 +30,7 @@ const body = `
   <section class="create-group-section">
     <h2>Creer un nouveau groupe</h2>
     <form action="/organizer/groups/create" method="POST" class="inline-form" style="display: flex; gap: 10px; align-items: flex-end; margin-bottom: 30px;">
+      <input type="hidden" name="_csrf" value="${csrfToken}">
       <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
         <label for="group_name" style="display: block; margin-bottom: 5px;">Nom du groupe</label>
         <input type="text" id="group_name" name="group_name" placeholder="Ex: Noel 2026" required minlength="2" style="width: 100%; box-sizing: border-box;">

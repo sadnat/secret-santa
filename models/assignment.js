@@ -1,29 +1,75 @@
 const { db } = require('../config/database');
-const CryptoJS = require('crypto-js');
+const crypto = require('crypto');
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default_key_32_characters_long!';
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
+if (!ENCRYPTION_KEY || ENCRYPTION_KEY.length < 32) {
+  throw new Error('ENCRYPTION_KEY must be set and at least 32 characters long.');
+}
+
+// Derive a 32-byte key from the passphrase using SHA-256
+const KEY = crypto.createHash('sha256').update(ENCRYPTION_KEY).digest();
 
 const Assignment = {
   /**
-   * Encrypt receiver ID
+   * Encrypt receiver ID using AES-256-GCM
+   * Returns: iv:authTag:ciphertext (hex encoded)
    */
   encrypt(receiverId) {
-    return CryptoJS.AES.encrypt(String(receiverId), ENCRYPTION_KEY).toString();
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', KEY, iv);
+    let encrypted = cipher.update(String(receiverId), 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    const authTag = cipher.getAuthTag();
+    return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
   },
 
   /**
    * Decrypt receiver ID
    */
   decrypt(encryptedReceiver) {
-    const bytes = CryptoJS.AES.decrypt(encryptedReceiver, ENCRYPTION_KEY);
-    return parseInt(bytes.toString(CryptoJS.enc.Utf8), 10);
+    // Support legacy crypto-js format (base64 with no colons)
+    if (!encryptedReceiver.includes(':')) {
+      return this.decryptLegacy(encryptedReceiver);
+    }
+
+    const parts = encryptedReceiver.split(':');
+    if (parts.length !== 3) {
+      throw new Error('Invalid encrypted data format');
+    }
+
+    const iv = Buffer.from(parts[0], 'hex');
+    const authTag = Buffer.from(parts[1], 'hex');
+    const encrypted = parts[2];
+
+    const decipher = crypto.createDecipheriv('aes-256-gcm', KEY, iv);
+    decipher.setAuthTag(authTag);
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return parseInt(decrypted, 10);
   },
 
   /**
-   * Create hash of receiver ID (for admin verification without revealing)
+   * Decrypt legacy crypto-js AES encrypted data
+   * Allows reading old assignments after migration
+   */
+  decryptLegacy(encryptedReceiver) {
+    try {
+      const CryptoJS = require('crypto-js');
+      const bytes = CryptoJS.AES.decrypt(encryptedReceiver, ENCRYPTION_KEY);
+      return parseInt(bytes.toString(CryptoJS.enc.Utf8), 10);
+    } catch (e) {
+      console.error('Failed to decrypt legacy assignment:', e.message);
+      return null;
+    }
+  },
+
+  /**
+   * Create HMAC hash of receiver ID (for verification without revealing)
    */
   hash(receiverId) {
-    return CryptoJS.SHA256(String(receiverId) + ENCRYPTION_KEY).toString();
+    return crypto.createHmac('sha256', KEY)
+      .update(String(receiverId))
+      .digest('hex');
   },
 
   /**
