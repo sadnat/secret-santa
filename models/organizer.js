@@ -137,6 +137,37 @@ const Organizer = {
   },
 
   /**
+   * Update organizer email (requires re-verification)
+   * @param {number} id - Organizer ID
+   * @param {string} newEmail - New email address
+   * @returns {string} Verification token
+   */
+  updateEmail(id, newEmail) {
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    const stmt = db.prepare(`
+      UPDATE organizers 
+      SET email = ?, is_verified = 0, verification_token = ?, verification_token_expires_at = ?
+      WHERE id = ?
+    `);
+    stmt.run(newEmail.toLowerCase().trim(), verificationToken, expiresAt, id);
+
+    return verificationToken;
+  },
+
+  /**
+   * Check if email exists for another organizer (excluding given id)
+   * @param {string} email - Email to check
+   * @param {number} excludeId - Organizer ID to exclude
+   * @returns {boolean}
+   */
+  emailExistsForOther(email, excludeId) {
+    const stmt = db.prepare('SELECT id FROM organizers WHERE email = ? AND id != ?');
+    return stmt.get(email.toLowerCase().trim(), excludeId) !== undefined;
+  },
+
+  /**
    * Delete organizer and all associated data
    */
   delete(id) {

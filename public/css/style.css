@@ -913,6 +913,14 @@ footer::before {
   border-bottom: none;
 }
 
+.settings-form .form-group {
+  margin-bottom: 1rem;
+}
+
+.settings-form .btn {
+  margin-top: 0.5rem;
+}
+
 .info-card {
   background: #f8f9fa;
   padding: 1rem 1.5rem;

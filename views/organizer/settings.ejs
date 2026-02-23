@@ -6,11 +6,69 @@ const body = `
   <h1>Parametres du compte</h1>
 
   <section class="settings-section">
-    <h2>Mes Informations</h2>
-    <div class="info-card">
-      <p><strong>Nom :</strong> ${escapeHtml(fullOrganizer.first_name)} ${escapeHtml(fullOrganizer.last_name)}</p>
-      <p><strong>Email :</strong> ${escapeHtml(fullOrganizer.email)}</p>
+    <h2>Modifier le profil</h2>
+    <form action="/organizer/settings/profile" method="POST" class="settings-form">
+      <input type="hidden" name="_csrf" value="${csrfToken}">
+      <div class="form-row" style="display: flex; gap: 15px; flex-wrap: wrap;">
+        <div class="form-group" style="flex: 1; min-width: 200px;">
+          <label for="first_name">Prenom</label>
+          <input type="text" id="first_name" name="first_name" required minlength="2"
+                 value="${escapeHtml(fullOrganizer.first_name)}" placeholder="Votre prenom">
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 200px;">
+          <label for="last_name">Nom</label>
+          <input type="text" id="last_name" name="last_name" required minlength="2"
+                 value="${escapeHtml(fullOrganizer.last_name)}" placeholder="Votre nom">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </form>
+  </section>
+
+  <section class="settings-section">
+    <h2>Modifier l&#39;adresse email</h2>
+    <p style="margin-bottom: 1rem; color: #666;">Email actuel : <strong>${escapeHtml(fullOrganizer.email)}</strong></p>
+    <div class="alert alert-info" style="margin-bottom: 1rem;">
+      Un changement d&#39;email necessite une re-verification. Vous serez deconnecte et devrez verifier votre nouvelle adresse avant de vous reconnecter.
     </div>
+    <form action="/organizer/settings/email" method="POST" class="settings-form"
+          onsubmit="return confirm('Changer votre email vous deconnectera. Vous devrez verifier votre nouvelle adresse email. Continuer ?')">
+      <input type="hidden" name="_csrf" value="${csrfToken}">
+      <div class="form-group">
+        <label for="email">Nouvelle adresse email</label>
+        <input type="email" id="email" name="email" required
+               placeholder="nouvelle@email.com">
+      </div>
+      <div class="form-group">
+        <label for="email_password">Mot de passe actuel (confirmation)</label>
+        <input type="password" id="email_password" name="password" required
+               placeholder="Votre mot de passe actuel">
+      </div>
+      <button type="submit" class="btn btn-primary">Changer l&#39;email</button>
+    </form>
+  </section>
+
+  <section class="settings-section">
+    <h2>Modifier le mot de passe</h2>
+    <form action="/organizer/settings/password" method="POST" class="settings-form">
+      <input type="hidden" name="_csrf" value="${csrfToken}">
+      <div class="form-group">
+        <label for="current_password">Mot de passe actuel</label>
+        <input type="password" id="current_password" name="current_password" required
+               placeholder="Votre mot de passe actuel">
+      </div>
+      <div class="form-group">
+        <label for="new_password">Nouveau mot de passe</label>
+        <input type="password" id="new_password" name="new_password" required
+               placeholder="8 caracteres minimum" minlength="8" maxlength="72">
+      </div>
+      <div class="form-group">
+        <label for="new_password_confirm">Confirmer le nouveau mot de passe</label>
+        <input type="password" id="new_password_confirm" name="new_password_confirm" required
+               placeholder="Confirmez le nouveau mot de passe" minlength="8" maxlength="72">
+      </div>
+      <button type="submit" class="btn btn-primary">Changer le mot de passe</button>
+    </form>
   </section>
 
   <section class="settings-section danger-zone">

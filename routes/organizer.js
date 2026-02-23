@@ -426,6 +426,129 @@ router.get('/settings', requireAuth, (req, res) => {
 });
 
 /**
+ * Update profile (first name, last name)
+ */
+router.post('/settings/profile', requireAuth, (req, res) => {
+  const organizerId = getOrganizerId(req);
+  const { first_name, last_name } = req.body;
+
+  const errors = [];
+  if (!first_name || first_name.trim().length < 2) {
+    errors.push('Le prenom doit contenir au moins 2 caracteres.');
+  }
+  if (!last_name || last_name.trim().length < 2) {
+    errors.push('Le nom doit contenir au moins 2 caracteres.');
+  }
+
+  if (errors.length > 0) {
+    req.flash('error', errors.join(' '));
+    return res.redirect('/organizer/settings');
+  }
+
+  try {
+    Organizer.update(organizerId, { first_name, last_name });
+
+    // Update session data
+    req.session.organizer.firstName = first_name.trim();
+    req.session.organizer.lastName = last_name.trim();
+
+    req.flash('success', 'Profil mis a jour.');
+    res.redirect('/organizer/settings');
+  } catch (error) {
+    console.error('Update profile error:', error);
+    req.flash('error', 'Erreur lors de la mise a jour du profil.');
+    res.redirect('/organizer/settings');
+  }
+});
+
+/**
+ * Update email (requires re-verification)
+ */
+router.post('/settings/email', requireAuth, async (req, res) => {
+  const organizerId = getOrganizerId(req);
+  const { email, password } = req.body;
+
+  if (!email || !isValidEmail(email)) {
+    req.flash('error', 'Veuillez entrer une adresse email valide.');
+    return res.redirect('/organizer/settings');
+  }
+
+  // Verify current password
+  const isValid = await Organizer.verifyPasswordById(organizerId, password);
+  if (!isValid) {
+    req.flash('error', 'Mot de passe incorrect.');
+    return res.redirect('/organizer/settings');
+  }
+
+  // Check if email is already used by another account
+  if (Organizer.emailExistsForOther(email, organizerId)) {
+    req.flash('error', 'Cette adresse email est deja utilisee par un autre compte.');
+    return res.redirect('/organizer/settings');
+  }
+
+  try {
+    const verificationToken = Organizer.updateEmail(organizerId, email);
+
+    // Send verification email to new address
+    await MailerService.sendVerificationEmail(email.toLowerCase().trim(), verificationToken);
+
+    // Update session
+    req.session.organizer.email = email.toLowerCase().trim();
+
+    // Destroy session so user must re-login after verifying
+    req.session.destroy(() => {
+      res.redirect('/organizer/login');
+    });
+  } catch (error) {
+    console.error('Update email error:', error);
+    req.flash('error', 'Erreur lors de la mise a jour de l\'email.');
+    res.redirect('/organizer/settings');
+  }
+});
+
+/**
+ * Update password
+ */
+router.post('/settings/password', requireAuth, async (req, res) => {
+  const organizerId = getOrganizerId(req);
+  const { current_password, new_password, new_password_confirm } = req.body;
+
+  // Verify current password
+  const isValid = await Organizer.verifyPasswordById(organizerId, current_password);
+  if (!isValid) {
+    req.flash('error', 'Mot de passe actuel incorrect.');
+    return res.redirect('/organizer/settings');
+  }
+
+  // Validate new password
+  const errors = [];
+  if (!new_password || new_password.length < 8) {
+    errors.push('Le nouveau mot de passe doit contenir au moins 8 caracteres.');
+  }
+  if (new_password && new_password.length > 72) {
+    errors.push('Le nouveau mot de passe ne doit pas depasser 72 caracteres.');
+  }
+  if (new_password !== new_password_confirm) {
+    errors.push('Les nouveaux mots de passe ne correspondent pas.');
+  }
+
+  if (errors.length > 0) {
+    req.flash('error', errors.join(' '));
+    return res.redirect('/organizer/settings');
+  }
+
+  try {
+    await Organizer.updatePassword(organizerId, new_password);
+    req.flash('success', 'Mot de passe modifie avec succes.');
+    res.redirect('/organizer/settings');
+  } catch (error) {
+    console.error('Update password error:', error);
+    req.flash('error', 'Erreur lors de la modification du mot de passe.');
+    res.redirect('/organizer/settings');
+  }
+});
+
+/**
  * Delete account page
  */
 router.get('/settings/delete', requireAuth, (req, res) => {
