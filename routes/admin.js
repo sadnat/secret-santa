@@ -88,7 +88,7 @@ router.post('/users/:id/delete', (req, res) => {
     return res.redirect('/admin/users?error=' + encodeURIComponent('Utilisateur non trouve.'));
   }
   
-  Organizer.deleteById(userId);
+  Organizer.delete(userId);
   
   res.redirect('/admin/users?success=' + encodeURIComponent(`Utilisateur ${user.first_name} ${user.last_name} supprime.`));
 });

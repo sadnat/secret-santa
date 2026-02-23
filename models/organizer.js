@@ -193,14 +193,6 @@ const Organizer = {
     const stmt = db.prepare('SELECT is_admin FROM organizers WHERE id = ?');
     const result = stmt.get(id);
     return result ? result.is_admin === 1 : false;
-  },
-
-  /**
-   * Delete organizer by ID (admin action)
-   */
-  deleteById(id) {
-    const stmt = db.prepare('DELETE FROM organizers WHERE id = ?');
-    return stmt.run(id);
   }
 };
 

@@ -1,7 +1,5 @@
 const express = require('express');
-const router = express.Router({ mergeParams: true }); // Important to access groupId from parent router if mounted there, but I'll mount it differently.
-// Actually better to mount at /organizer/groups/:groupId
-// So params.groupId will be available.
+const router = express.Router({ mergeParams: true });
 
 const Participant = require('../models/participant');
 const Exclusion = require('../models/exclusion');
@@ -161,7 +159,7 @@ router.get('/draw', (req, res) => {
   const participantCount = Participant.countByGroup(req.group.id);
   const drawExists = Assignment.drawExistsByGroup(req.group.id);
   const assignments = drawExists ? Assignment.findAllForGroup(req.group.id) : [];
-  const canDraw = DrawService.canPerformDraw(req.group.id); // Need to update DrawService!
+  const canDraw = DrawService.canPerformDraw(req.group.id);
   const pendingEmails = Assignment.countPendingEmailsByGroup(req.group.id);
   const sentEmails = Assignment.countSentEmailsByGroup(req.group.id);
   const smtpConfigured = MailerService.isConfigured();
@@ -185,7 +183,6 @@ router.post('/draw/perform', requireNotArchived, (req, res) => {
     return res.redirect(`/organizer/groups/${req.group.id}/draw?error=` + encodeURIComponent('Un tirage a deja ete effectue.'));
   }
 
-  // Need to update DrawService to accept groupId
   const result = DrawService.performDraw(req.group.id);
 
   if (result.success) {
@@ -211,7 +208,6 @@ router.post('/draw/send-emails', requireNotArchived, async (req, res) => {
   }
 
   try {
-    // Need to update MailerService to accept groupId
     const result = await MailerService.sendAllEmails(req.group.id);
 
     if (result.success) {

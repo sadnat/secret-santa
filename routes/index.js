@@ -53,6 +53,14 @@ router.get('/join/:code', (req, res) => {
     });
   }
 
+  if (group.archived_at) {
+    return res.render('error', {
+      title: 'Groupe archive',
+      message: 'Ce groupe est archive et n\'accepte plus de nouvelles inscriptions.',
+      error: {}
+    });
+  }
+
   res.render('register', {
     title: 'Inscription',
     group,
@@ -73,6 +81,14 @@ router.post('/join/:code', (req, res) => {
     return res.render('error', {
       title: 'Code invalide',
       message: 'Ce code d\'invitation n\'existe pas ou n\'est plus valide.',
+      error: {}
+    });
+  }
+
+  if (group.archived_at) {
+    return res.render('error', {
+      title: 'Groupe archive',
+      message: 'Ce groupe est archive et n\'accepte plus de nouvelles inscriptions.',
       error: {}
     });
   }
