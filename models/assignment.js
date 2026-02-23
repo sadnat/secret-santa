@@ -173,6 +173,7 @@ const Assignment = {
         g.first_name as giver_first_name,
         g.last_name as giver_last_name,
         g.email as giver_email,
+        g.edit_token as giver_edit_token,
         g.group_id
       FROM assignments a
       JOIN participants g ON a.giver_id = g.id

@@ -1,0 +1,44 @@
+<%
+const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
+
+const body = `
+<div class="form-page">
+  <h1>Mes souhaits</h1>
+  <p class="group-context">Bonjour <strong>${escapeHtml(participant.first_name)}</strong> ! Vous participez au groupe <strong>${escapeHtml(participant.group_name)}</strong>.</p>
+
+  ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
+
+  <form action="/participant/${token}" method="POST" class="register-form">
+    <input type="hidden" name="_csrf" value="${csrfToken}">
+
+    <div class="form-section">
+      <h2>Vos souhaits de cadeaux</h2>
+      <p class="section-description">Modifiez vos idees de cadeaux pour aider votre Secret Santa !</p>
+
+      <div class="form-group">
+        <label for="wish1">Souhait 1</label>
+        <input type="text" id="wish1" name="wish1"
+               value="${escapeHtml(participant.wish1 || '')}"
+               placeholder="Ex: Un livre de cuisine">
+      </div>
+      <div class="form-group">
+        <label for="wish2">Souhait 2</label>
+        <input type="text" id="wish2" name="wish2"
+               value="${escapeHtml(participant.wish2 || '')}"
+               placeholder="Ex: Des chaussettes rigolotes">
+      </div>
+      <div class="form-group">
+        <label for="wish3">Souhait 3</label>
+        <input type="text" id="wish3" name="wish3"
+               value="${escapeHtml(participant.wish3 || '')}"
+               placeholder="Ex: Du chocolat">
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-large">Enregistrer mes souhaits</button>
+  </form>
+
+  <p class="back-link" style="margin-top: 1.5rem;"><a href="/">Retour a l'accueil</a></p>
+</div>
+` %>
+<%- include('../layout', { title, organizer: null, body }) %>

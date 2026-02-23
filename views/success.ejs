@@ -1,6 +1,7 @@
 <%
 const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
 const displayGroupName = typeof groupName !== 'undefined' && groupName ? groupName : null;
+const token = typeof editToken !== 'undefined' && editToken ? editToken : null;
 
 const body = `
 <div class="success-page">
@@ -16,6 +17,15 @@ const body = `
       <li>Gardez le secret jusqu&#39;a l&#39;echange !</li>
     </ul>
   </div>
+
+  ${token ? `
+  <div class="success-info" style="margin-top: 20px;">
+    <h2>Modifier vos souhaits</h2>
+    <p>Vous pouvez modifier vos idees de cadeaux a tout moment en utilisant ce lien :</p>
+    <p><a href="/participant/${escapeHtml(token)}" class="btn btn-secondary">Modifier mes souhaits</a></p>
+    <p style="color: #666; font-size: 0.9em;">Conservez ce lien, il vous sera aussi envoye par email lors du tirage au sort.</p>
+  </div>
+  ` : ''}
 
   <a href="/" class="btn btn-primary">Retour a l&#39;accueil</a>
 </div>

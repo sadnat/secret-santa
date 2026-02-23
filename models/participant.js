@@ -1,13 +1,15 @@
 const { db } = require('../config/database');
+const crypto = require('crypto');
 
 const Participant = {
   /**
-   * Create a new participant for a group
+   * Create a new participant for a group (auto-generates edit token)
    */
   create(data) {
+    const editToken = crypto.randomBytes(16).toString('hex');
     const stmt = db.prepare(`
-      INSERT INTO participants (first_name, last_name, email, wish1, wish2, wish3, group_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO participants (first_name, last_name, email, wish1, wish2, wish3, group_id, edit_token)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = stmt.run(
@@ -17,7 +19,8 @@ const Participant = {
       data.wish1 || null,
       data.wish2 || null,
       data.wish3 || null,
-      data.group_id
+      data.group_id,
+      editToken
     );
 
     return Number(result.lastInsertRowid);
@@ -81,6 +84,36 @@ const Participant = {
   findByEmail(email) {
     const stmt = db.prepare('SELECT * FROM participants WHERE email = ?');
     return stmt.get(email.toLowerCase().trim());
+  },
+
+  /**
+   * Find participant by edit token (with group info)
+   * @param {string} token - Edit token
+   * @returns {object|null} Participant with group name, or null
+   */
+  findByEditToken(token) {
+    const stmt = db.prepare(`
+      SELECT p.*, g.name as group_name, g.archived_at as group_archived_at
+      FROM participants p
+      JOIN groups g ON p.group_id = g.id
+      WHERE p.edit_token = ?
+    `);
+    return stmt.get(token);
+  },
+
+  /**
+   * Update participant wishes
+   * @param {number} id - Participant ID
+   * @param {object} data - { wish1, wish2, wish3 }
+   */
+  updateWishes(id, data) {
+    const stmt = db.prepare('UPDATE participants SET wish1 = ?, wish2 = ?, wish3 = ? WHERE id = ?');
+    return stmt.run(
+      data.wish1 || null,
+      data.wish2 || null,
+      data.wish3 || null,
+      id
+    );
   }
 };
 

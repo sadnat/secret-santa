@@ -70,6 +70,16 @@ const MailerService = {
     const budgetHtml = extraInfo.budget ? `<p><strong>Budget sugere :</strong> ${this.escapeHtml(extraInfo.budget)}</p>` : '';
     const eventDateHtml = extraInfo.event_date ? `<p><strong>Date de l'evenement :</strong> ${new Date(extraInfo.event_date + 'T00:00:00').toLocaleDateString('fr-FR')}</p>` : '';
 
+    const baseUrl = process.env.APP_URL || 'http://localhost:3000';
+    const editWishesHtml = giver.edit_token
+      ? `
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+        <p><strong>Modifier vos souhaits :</strong></p>
+        <p>Vous pouvez mettre a jour vos idees de cadeaux a tout moment en cliquant sur le lien ci-dessous :</p>
+        <p style="text-align: center;"><a href="${baseUrl}/participant/${giver.edit_token}" style="display: inline-block; background-color: #228b22; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Modifier mes souhaits</a></p>
+      `
+      : '';
+
     return `
       <!DOCTYPE html>
       <html>
@@ -142,6 +152,7 @@ const MailerService = {
           ${budgetHtml}
           ${eventDateHtml}
           <p>N'oublie pas : c'est un secret !</p>
+          ${editWishesHtml}
           <div class="footer">
             <p>Joyeuses fetes !</p>
           </div>
@@ -165,6 +176,11 @@ const MailerService = {
     const budgetText = extraInfo.budget ? `Budget sugere : ${extraInfo.budget}\n` : '';
     const eventDateText = extraInfo.event_date ? `Date de l'evenement : ${new Date(extraInfo.event_date + 'T00:00:00').toLocaleDateString('fr-FR')}\n` : '';
 
+    const baseUrl = process.env.APP_URL || 'http://localhost:3000';
+    const editWishesText = giver.edit_token
+      ? `\nModifier vos souhaits :\n${baseUrl}/participant/${giver.edit_token}\n`
+      : '';
+
     return `
 Secret Santa
 ${groupInfo}
@@ -176,7 +192,7 @@ ${receiver.first_name} ${receiver.last_name}
 ${wishesText}
 ${budgetText}${eventDateText}
 N'oublie pas : c'est un secret !
-
+${editWishesText}
 Joyeuses fetes !
     `.trim();
   },
@@ -204,18 +220,23 @@ Joyeuses fetes !
       ? `Secret Santa ${groupName} - Ton tirage au sort !`
       : 'Secret Santa - Ton tirage au sort !';
 
+    const giverData = {
+      first_name: assignment.giver_first_name,
+      edit_token: assignment.giver_edit_token || null
+    };
+
     const mailOptions = {
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to: assignment.giver_email,
       subject: subject,
       text: this.generateTextContent(
-        { first_name: assignment.giver_first_name },
+        giverData,
         assignment.receiver,
         groupName,
         groupExtra
       ),
       html: this.generateEmailContent(
-        { first_name: assignment.giver_first_name },
+        giverData,
         assignment.receiver,
         groupName,
         groupExtra

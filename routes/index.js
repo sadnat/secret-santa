@@ -125,7 +125,7 @@ router.post('/join/:code', (req, res) => {
   }
 
   try {
-    Participant.create({
+    const participantId = Participant.create({
       first_name,
       last_name,
       email,
@@ -135,7 +135,8 @@ router.post('/join/:code', (req, res) => {
       group_id: group.id
     });
 
-    res.redirect(`/success?group=${encodeURIComponent(group.name)}`);
+    const participant = Participant.findById(participantId);
+    res.redirect(`/success?group=${encodeURIComponent(group.name)}&token=${participant.edit_token}`);
   } catch (error) {
     console.error('Registration error:', error);
     res.render('register', {
@@ -153,11 +154,66 @@ router.post('/join/:code', (req, res) => {
  */
 router.get('/success', (req, res) => {
   const groupName = req.query.group || null;
+  const editToken = req.query.token || null;
 
   res.render('success', {
     title: 'Inscription reussie',
-    groupName
+    groupName,
+    editToken
   });
+});
+
+// ==================== PARTICIPANT SELF-SERVICE ====================
+
+/**
+ * View/edit wishes via secure token link
+ */
+router.get('/participant/:token', (req, res) => {
+  const { token } = req.params;
+  const participant = Participant.findByEditToken(token);
+
+  if (!participant) {
+    return res.render('error', {
+      title: 'Lien invalide',
+      message: 'Ce lien n\'est pas valide ou a expire.',
+      error: {}
+    });
+  }
+
+  res.render('participant/edit-wishes', {
+    title: 'Mes souhaits',
+    participant,
+    token,
+    error: null
+  });
+});
+
+/**
+ * Handle wish update via secure token
+ */
+router.post('/participant/:token', (req, res) => {
+  const { token } = req.params;
+  const participant = Participant.findByEditToken(token);
+
+  if (!participant) {
+    return res.render('error', {
+      title: 'Lien invalide',
+      message: 'Ce lien n\'est pas valide ou a expire.',
+      error: {}
+    });
+  }
+
+  const { wish1, wish2, wish3 } = req.body;
+
+  try {
+    Participant.updateWishes(participant.id, { wish1, wish2, wish3 });
+    req.flash('success', 'Vos souhaits ont ete mis a jour !');
+    res.redirect(`/participant/${token}`);
+  } catch (error) {
+    console.error('Update wishes error:', error);
+    req.flash('error', 'Erreur lors de la mise a jour de vos souhaits.');
+    res.redirect(`/participant/${token}`);
+  }
 });
 
 /**

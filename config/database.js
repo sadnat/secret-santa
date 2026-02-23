@@ -183,6 +183,21 @@ function initialize() {
     if (!hasGroupId) {
       db.exec('ALTER TABLE participants ADD COLUMN group_id INTEGER REFERENCES groups(id) ON DELETE CASCADE');
     }
+
+    // Add edit_token column for participant self-service
+    const hasEditToken = columns.some(col => col.name === 'edit_token');
+    if (!hasEditToken) {
+      db.exec('ALTER TABLE participants ADD COLUMN edit_token TEXT DEFAULT NULL');
+      // Generate tokens for existing participants
+      const existing = db.prepare('SELECT id FROM participants WHERE edit_token IS NULL').all();
+      const updateToken = db.prepare('UPDATE participants SET edit_token = ? WHERE id = ?');
+      for (const p of existing) {
+        updateToken.run(crypto.randomBytes(16).toString('hex'), p.id);
+      }
+      if (existing.length > 0) {
+        console.log(`Migration: Generated edit tokens for ${existing.length} existing participants.`);
+      }
+    }
   } else {
     // Create participants table with all columns
     db.exec(`
@@ -196,6 +211,7 @@ function initialize() {
         wish3 TEXT,
         organizer_id INTEGER REFERENCES organizers(id) ON DELETE CASCADE,
         group_id INTEGER REFERENCES groups(id) ON DELETE CASCADE,
+        edit_token TEXT DEFAULT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
