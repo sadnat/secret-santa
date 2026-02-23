@@ -49,10 +49,48 @@ const body = `
     <a href="/organizer/groups/${group.id}/draw" class="btn btn-primary">Tirage au sort</a>
   </div>
 
-  <section class="participants-section">
-    <h2>Liste des participants</h2>
+  ${!drawExists && !group.archived_at ? `
+  <section class="add-participant-section">
+    <h2>Ajouter un participant</h2>
+    <form action="/organizer/groups/${group.id}/participants/add" method="POST" class="settings-form">
+      <input type="hidden" name="_csrf" value="${csrfToken}">
+      <div class="form-row" style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <div class="form-group" style="flex: 1; min-width: 150px;">
+          <label for="add_first_name">Prenom *</label>
+          <input type="text" id="add_first_name" name="first_name" required minlength="2" placeholder="Prenom">
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 150px;">
+          <label for="add_last_name">Nom *</label>
+          <input type="text" id="add_last_name" name="last_name" required minlength="2" placeholder="Nom">
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 200px;">
+          <label for="add_email">Email *</label>
+          <input type="email" id="add_email" name="email" required placeholder="email@exemple.com">
+        </div>
+      </div>
+      <details style="margin-bottom: 1rem;">
+        <summary style="cursor: pointer; color: #666;">Souhaits (optionnel)</summary>
+        <div class="form-row" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 0.5rem;">
+          <div class="form-group" style="flex: 1; min-width: 150px;">
+            <input type="text" name="wish1" placeholder="Souhait 1">
+          </div>
+          <div class="form-group" style="flex: 1; min-width: 150px;">
+            <input type="text" name="wish2" placeholder="Souhait 2">
+          </div>
+          <div class="form-group" style="flex: 1; min-width: 150px;">
+            <input type="text" name="wish3" placeholder="Souhait 3">
+          </div>
+        </div>
+      </details>
+      <button type="submit" class="btn btn-primary">Ajouter</button>
+    </form>
+  </section>
+  ` : ''}
 
-    ${participants.length === 0 ? '<p class="empty-message">Aucun participant inscrit pour le moment. Partagez votre lien depuis les parametres.</p>' : `
+  <section class="participants-section">
+    <h2>Liste des participants (${participants.length})</h2>
+
+    ${participants.length === 0 ? '<p class="empty-message">Aucun participant inscrit pour le moment. Partagez votre lien depuis les parametres ou ajoutez-en manuellement ci-dessus.</p>' : `
     <div class="table-wrapper">
       <table class="data-table">
         <thead>

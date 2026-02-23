@@ -75,6 +75,58 @@ router.get('/', (req, res) => {
 });
 
 /**
+ * Add participant manually (organizer action)
+ */
+router.post('/participants/add', requireNotArchived, (req, res) => {
+  const { first_name, last_name, email, wish1, wish2, wish3 } = req.body;
+
+  if (Assignment.drawExistsByGroup(req.group.id)) {
+    req.flash('error', 'Impossible d\'ajouter un participant apres le tirage.');
+    return res.redirect(`/organizer/groups/${req.group.id}`);
+  }
+
+  // Validation
+  const errors = [];
+
+  if (!first_name || first_name.trim().length < 2) {
+    errors.push('Le prenom doit contenir au moins 2 caracteres.');
+  }
+  if (!last_name || last_name.trim().length < 2) {
+    errors.push('Le nom doit contenir au moins 2 caracteres.');
+  }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.push('Veuillez entrer une adresse email valide.');
+  }
+  if (errors.length === 0 && Participant.emailExistsForGroup(email, req.group.id)) {
+    errors.push('Cette adresse email est deja inscrite dans ce groupe.');
+  }
+
+  if (errors.length > 0) {
+    req.flash('error', errors.join(' '));
+    return res.redirect(`/organizer/groups/${req.group.id}`);
+  }
+
+  try {
+    Participant.create({
+      first_name,
+      last_name,
+      email,
+      wish1: wish1 || null,
+      wish2: wish2 || null,
+      wish3: wish3 || null,
+      group_id: req.group.id
+    });
+
+    req.flash('success', `${first_name.trim()} ${last_name.trim()} a ete ajoute au groupe.`);
+    res.redirect(`/organizer/groups/${req.group.id}`);
+  } catch (error) {
+    console.error('Add participant error:', error);
+    req.flash('error', 'Erreur lors de l\'ajout du participant.');
+    res.redirect(`/organizer/groups/${req.group.id}`);
+  }
+});
+
+/**
  * Delete participant
  */
 router.post('/participants/:id/delete', requireNotArchived, (req, res) => {
