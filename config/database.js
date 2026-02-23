@@ -66,6 +66,16 @@ function initialize() {
     db.exec('ALTER TABLE organizers ADD COLUMN is_admin BOOLEAN DEFAULT 0');
   }
 
+  // Add reset_token and reset_token_expires_at columns
+  const hasResetToken = orgColumns.some(col => col.name === 'reset_token');
+  if (!hasResetToken) {
+    db.exec('ALTER TABLE organizers ADD COLUMN reset_token TEXT DEFAULT NULL');
+  }
+  const hasResetTokenExpiry = orgColumns.some(col => col.name === 'reset_token_expires_at');
+  if (!hasResetTokenExpiry) {
+    db.exec('ALTER TABLE organizers ADD COLUMN reset_token_expires_at DATETIME DEFAULT NULL');
+  }
+
   // Bootstrap admin from ADMIN_EMAIL environment variable
   const adminEmail = process.env.ADMIN_EMAIL;
   if (adminEmail) {

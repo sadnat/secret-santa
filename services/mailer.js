@@ -248,6 +248,68 @@ Joyeuses fetes !
   },
 
   /**
+   * Send password reset email
+   * @param {string} email - Recipient email
+   * @param {string} token - Reset token
+   * @returns {object} { success, message? }
+   */
+  async sendPasswordResetEmail(email, token) {
+    if (!this.isConfigured()) {
+      console.error('SMTP not configured, skipping password reset email');
+      return { success: false, message: 'SMTP non configure' };
+    }
+
+    const baseUrl = process.env.APP_URL || 'http://localhost:3000';
+    const link = `${baseUrl}/organizer/reset-password/${token}`;
+
+    const transporter = this.createTransporter();
+
+    try {
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || process.env.SMTP_USER,
+        to: email,
+        subject: 'Secret Santa - Reinitialisation de votre mot de passe',
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5; }
+              .container { background-color: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+              h1 { color: #c41e3a; text-align: center; }
+              .btn { display: inline-block; background-color: #c41e3a; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+              .footer { text-align: center; margin-top: 30px; color: #666; font-size: 0.9em; }
+              .warning { color: #856404; background-color: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 5px; margin: 15px 0; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>Secret Santa</h1>
+              <h2>Reinitialisation du mot de passe</h2>
+              <p>Vous avez demande la reinitialisation de votre mot de passe.</p>
+              <p>Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe :</p>
+              <p style="text-align: center;"><a href="${link}" class="btn">Reinitialiser mon mot de passe</a></p>
+              <p>Ou copiez ce lien dans votre navigateur :</p>
+              <p style="word-break: break-all; color: #666;">${link}</p>
+              <div class="warning">Ce lien est valide pendant 1 heure. Si vous n'avez pas demande cette reinitialisation, ignorez cet email.</div>
+              <div class="footer">
+                <p>Secret Santa - Joyeuses fetes !</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+        text: `Reinitialisation du mot de passe Secret Santa\n\nVous avez demande la reinitialisation de votre mot de passe.\n\nCliquez sur ce lien pour choisir un nouveau mot de passe :\n${link}\n\nCe lien est valide pendant 1 heure.\nSi vous n'avez pas demande cette reinitialisation, ignorez cet email.`
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Password reset email error:', error);
+      return { success: false, message: error.message };
+    }
+  },
+
+  /**
    * Send all pending emails for a specific group
    * @param {number} groupId - The group's ID
    */

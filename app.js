@@ -140,9 +140,11 @@ app.use((req, res, next) => {
 
 // ===== Routes =====
 
-// Apply auth rate limiter to login/register
+// Apply auth rate limiter to login/register/password reset
 app.use('/organizer/login', authLimiter);
 app.use('/organizer/register', authLimiter);
+app.use('/organizer/forgot-password', authLimiter);
+app.use('/organizer/reset-password', authLimiter);
 app.use('/join', authLimiter);
 
 // Apply email rate limiter

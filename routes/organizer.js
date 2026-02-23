@@ -156,6 +156,119 @@ router.get('/verify/:token', (req, res) => {
   }
 });
 
+// ==================== PASSWORD RESET ====================
+
+/**
+ * Forgot password form
+ */
+router.get('/forgot-password', (req, res) => {
+  if (req.session.organizer) {
+    return res.redirect('/organizer/dashboard');
+  }
+  res.render('organizer/forgot-password', {
+    title: 'Mot de passe oublie',
+    error: null
+  });
+});
+
+/**
+ * Handle forgot password - send reset email
+ */
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+
+  if (!email || !isValidEmail(email)) {
+    return res.render('organizer/forgot-password', {
+      title: 'Mot de passe oublie',
+      error: 'Veuillez entrer une adresse email valide.'
+    });
+  }
+
+  try {
+    // Always show success message to prevent email enumeration
+    const token = Organizer.setResetToken(email);
+
+    if (token) {
+      await MailerService.sendPasswordResetEmail(email.toLowerCase().trim(), token);
+    }
+
+    // Same message regardless of whether email exists
+    req.flash('success', 'Si cette adresse email est associee a un compte, un email de reinitialisation a ete envoye. Verifiez votre boite de reception.');
+    res.redirect('/organizer/login');
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    req.flash('error', 'Une erreur est survenue. Veuillez reessayer.');
+    res.redirect('/organizer/forgot-password');
+  }
+});
+
+/**
+ * Reset password form (via token link)
+ */
+router.get('/reset-password/:token', (req, res) => {
+  const { token } = req.params;
+  const organizer = Organizer.findByResetToken(token);
+
+  if (!organizer) {
+    req.flash('error', 'Lien de reinitialisation invalide ou expire. Veuillez faire une nouvelle demande.');
+    return res.redirect('/organizer/forgot-password');
+  }
+
+  res.render('organizer/reset-password', {
+    title: 'Nouveau mot de passe',
+    token,
+    error: null
+  });
+});
+
+/**
+ * Handle reset password
+ */
+router.post('/reset-password/:token', async (req, res) => {
+  const { token } = req.params;
+  const { password, password_confirm } = req.body;
+
+  const organizer = Organizer.findByResetToken(token);
+
+  if (!organizer) {
+    req.flash('error', 'Lien de reinitialisation invalide ou expire. Veuillez faire une nouvelle demande.');
+    return res.redirect('/organizer/forgot-password');
+  }
+
+  // Validation
+  const errors = [];
+
+  if (!password || password.length < 8) {
+    errors.push('Le mot de passe doit contenir au moins 8 caracteres.');
+  }
+
+  if (password && password.length > 72) {
+    errors.push('Le mot de passe ne doit pas depasser 72 caracteres.');
+  }
+
+  if (password !== password_confirm) {
+    errors.push('Les mots de passe ne correspondent pas.');
+  }
+
+  if (errors.length > 0) {
+    return res.render('organizer/reset-password', {
+      title: 'Nouveau mot de passe',
+      token,
+      error: errors.join(' ')
+    });
+  }
+
+  try {
+    await Organizer.updatePassword(organizer.id, password);
+    req.flash('success', 'Mot de passe modifie avec succes ! Vous pouvez maintenant vous connecter.');
+    res.redirect('/organizer/login');
+  } catch (error) {
+    console.error('Reset password error:', error);
+    req.flash('error', 'Une erreur est survenue. Veuillez reessayer.');
+    res.redirect(`/organizer/reset-password/${token}`);
+  }
+});
+
 /**
  * Login form
  */

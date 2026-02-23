@@ -156,6 +156,72 @@ const Organizer = {
     return bcrypt.compare(password, organizer.password_hash);
   },
 
+  // ===== Password Reset Methods =====
+
+  /**
+   * Set a password reset token for an organizer (1 hour expiry)
+   * @param {string} email - Organizer email
+   * @returns {string|null} The reset token, or null if email not found
+   */
+  setResetToken(email) {
+    const organizer = this.findByEmail(email);
+    if (!organizer) {
+      return null;
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
+
+    const stmt = db.prepare('UPDATE organizers SET reset_token = ?, reset_token_expires_at = ? WHERE id = ?');
+    stmt.run(token, expiresAt, organizer.id);
+
+    return token;
+  },
+
+  /**
+   * Find organizer by valid (non-expired) reset token
+   * @param {string} token - Reset token
+   * @returns {object|null} Organizer object or null
+   */
+  findByResetToken(token) {
+    const stmt = db.prepare('SELECT id, email, first_name, last_name, reset_token_expires_at FROM organizers WHERE reset_token = ?');
+    const organizer = stmt.get(token);
+
+    if (!organizer) {
+      return null;
+    }
+
+    // Check expiration
+    if (organizer.reset_token_expires_at) {
+      const expiresAt = new Date(organizer.reset_token_expires_at);
+      if (expiresAt < new Date()) {
+        return null;
+      }
+    }
+
+    return organizer;
+  },
+
+  /**
+   * Update password and clear reset token
+   * @param {number} id - Organizer ID
+   * @param {string} newPassword - New plain text password
+   */
+  async updatePassword(id, newPassword) {
+    const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    const stmt = db.prepare('UPDATE organizers SET password_hash = ?, reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?');
+    stmt.run(passwordHash, id);
+  },
+
+  /**
+   * Clear reset token for an organizer
+   * @param {number} id - Organizer ID
+   */
+  clearResetToken(id) {
+    const stmt = db.prepare('UPDATE organizers SET reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?');
+    stmt.run(id);
+  },
+
   // ===== Admin Methods =====
 
   /**
