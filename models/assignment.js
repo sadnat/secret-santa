@@ -195,6 +195,36 @@ const Assignment = {
   },
 
   /**
+   * Get a single decrypted assignment by ID
+   */
+  findDecryptedById(id) {
+    const stmt = db.prepare(`
+      SELECT
+        a.*,
+        g.first_name as giver_first_name,
+        g.last_name as giver_last_name,
+        g.email as giver_email,
+        g.edit_token as giver_edit_token,
+        g.group_id
+      FROM assignments a
+      JOIN participants g ON a.giver_id = g.id
+      WHERE a.id = ?
+    `);
+
+    const assignment = stmt.get(id);
+    if (!assignment) return null;
+
+    const receiverId = this.decrypt(assignment.encrypted_receiver);
+    const receiver = db.prepare('SELECT * FROM participants WHERE id = ?').get(receiverId);
+
+    return {
+      ...assignment,
+      receiver_id: receiverId,
+      receiver
+    };
+  },
+
+  /**
    * Mark assignment as email sent
    */
   markEmailSent(id) {

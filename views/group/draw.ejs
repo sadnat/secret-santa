@@ -1,13 +1,19 @@
 <%
 const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
 
+const isArchived = group.archived_at !== null;
 let assignmentRows = '';
 if (assignments && assignments.length > 0) {
   assignmentRows = assignments.map(a => {
     const emailStatus = a.email_sent
       ? '<span class="badge badge-success">Envoye</span>'
       : '<span class="badge badge-pending">En attente</span>';
-    return `<tr><td>${escapeHtml(a.giver_name)}</td><td>${escapeHtml(a.giver_email)}</td><td>${emailStatus}</td></tr>`;
+    const resendBtn = !isArchived && smtpConfigured ? `
+      <form action="/organizer/groups/${group.id}/draw/resend/${a.id}" method="POST" style="display:inline;">
+        <input type="hidden" name="_csrf" value="${csrfToken}">
+        <button type="submit" class="btn btn-small btn-secondary" onclick="return confirm('Renvoyer l\\\'email a ${escapeHtml(a.giver_name)} ?')">${a.email_sent ? 'Renvoyer' : 'Envoyer'}</button>
+      </form>` : '';
+    return `<tr><td>${escapeHtml(a.giver_name)}</td><td>${escapeHtml(a.giver_email)}</td><td>${emailStatus}</td><td>${resendBtn}</td></tr>`;
   }).join('');
 }
 
@@ -54,10 +60,11 @@ const body = `
     <div class="table-wrapper">
       <table class="data-table">
         <thead>
-          <tr>
+           <tr>
             <th>Participant</th>
             <th>Email</th>
             <th>Email envoye</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>

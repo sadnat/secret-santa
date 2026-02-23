@@ -146,9 +146,11 @@ app.use('/organizer/register', authLimiter);
 app.use('/organizer/forgot-password', authLimiter);
 app.use('/organizer/reset-password', authLimiter);
 app.use('/join', authLimiter);
+app.use('/participant', authLimiter);
 
 // Apply email rate limiter
 app.use('/organizer/groups/:groupId(\\d+)/draw/send-emails', emailLimiter);
+app.use('/organizer/groups/:groupId(\\d+)/draw/resend', emailLimiter);
 
 app.use('/admin', adminRoutes);
 app.use('/organizer/groups/:groupId(\\d+)', groupRoutes);

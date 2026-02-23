@@ -1,0 +1,58 @@
+<%
+const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
+
+const body = `
+<div class="form-page">
+  <h1>Modifier le participant</h1>
+
+  <p><a href="/organizer/groups/${group.id}">&larr; Retour au tableau de bord</a></p>
+
+  <form action="/organizer/groups/${group.id}/participants/${participant.id}/edit" method="POST" class="settings-form">
+    <input type="hidden" name="_csrf" value="${csrfToken}">
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="first_name">Prenom *</label>
+        <input type="text" id="first_name" name="first_name" required minlength="2"
+               value="${escapeHtml(participant.first_name)}" placeholder="Prenom">
+      </div>
+      <div class="form-group">
+        <label for="last_name">Nom *</label>
+        <input type="text" id="last_name" name="last_name" required minlength="2"
+               value="${escapeHtml(participant.last_name)}" placeholder="Nom">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email *</label>
+      <input type="email" id="email" name="email" required
+             value="${escapeHtml(participant.email)}" placeholder="email@exemple.com">
+    </div>
+
+    <div class="form-section">
+      <h2>Souhaits (optionnel)</h2>
+      <div class="form-group">
+        <label for="wish1">Souhait 1</label>
+        <input type="text" id="wish1" name="wish1"
+               value="${escapeHtml(participant.wish1 || '')}" placeholder="Souhait 1">
+      </div>
+      <div class="form-group">
+        <label for="wish2">Souhait 2</label>
+        <input type="text" id="wish2" name="wish2"
+               value="${escapeHtml(participant.wish2 || '')}" placeholder="Souhait 2">
+      </div>
+      <div class="form-group">
+        <label for="wish3">Souhait 3</label>
+        <input type="text" id="wish3" name="wish3"
+               value="${escapeHtml(participant.wish3 || '')}" placeholder="Souhait 3">
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+      <a href="/organizer/groups/${group.id}" class="btn btn-secondary">Annuler</a>
+    </div>
+  </form>
+</div>
+` %>
+<%- include('../layout', { title, organizer: locals.organizer, body }) %>

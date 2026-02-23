@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Participant = require('../models/participant');
 const Group = require('../models/group');
+const Assignment = require('../models/assignment');
 
 /**
  * Home page
@@ -180,10 +181,23 @@ router.get('/participant/:token', (req, res) => {
     });
   }
 
+  // Look up this participant's assignment (if draw has been done)
+  let myRecipient = null;
+  try {
+    const assignment = Assignment.getForGiver(participant.id);
+    if (assignment && assignment.receiver_id) {
+      myRecipient = Participant.findById(assignment.receiver_id);
+    }
+  } catch (e) {
+    // Draw may not exist yet, that's fine
+    console.error('Error looking up assignment:', e.message);
+  }
+
   res.render('participant/edit-wishes', {
-    title: 'Mes souhaits',
+    title: 'Mon Secret Santa',
     participant,
     token,
+    myRecipient,
     error: null
   });
 });

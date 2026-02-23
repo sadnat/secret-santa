@@ -122,6 +122,28 @@ const Participant = {
       data.wish3 || null,
       id
     );
+  },
+
+  /**
+   * Update participant details (organizer edit)
+   * @param {number} id - Participant ID
+   * @param {object} data - { first_name, last_name, email, wish1, wish2, wish3 }
+   */
+  update(id, data) {
+    const stmt = db.prepare(`
+      UPDATE participants 
+      SET first_name = ?, last_name = ?, email = ?, wish1 = ?, wish2 = ?, wish3 = ?
+      WHERE id = ?
+    `);
+    return stmt.run(
+      data.first_name.trim(),
+      data.last_name.trim(),
+      data.email.toLowerCase().trim(),
+      data.wish1 || null,
+      data.wish2 || null,
+      data.wish3 || null,
+      id
+    );
   }
 };
 

@@ -127,6 +127,70 @@ router.post('/participants/add', requireNotArchived, (req, res) => {
 });
 
 /**
+ * Edit participant form
+ */
+router.get('/participants/:id/edit', (req, res) => {
+  const participant = Participant.findByIdAndGroup(req.params.id, req.group.id);
+  
+  if (!participant) {
+    req.flash('error', 'Participant non trouve.');
+    return res.redirect(`/organizer/groups/${req.group.id}`);
+  }
+
+  res.render('group/edit-participant', {
+    title: 'Modifier le participant',
+    participant
+  });
+});
+
+/**
+ * Handle participant edit
+ */
+router.post('/participants/:id/edit', requireNotArchived, (req, res) => {
+  const participant = Participant.findByIdAndGroup(req.params.id, req.group.id);
+
+  if (!participant) {
+    req.flash('error', 'Participant non trouve.');
+    return res.redirect(`/organizer/groups/${req.group.id}`);
+  }
+
+  const { first_name, last_name, email, wish1, wish2, wish3 } = req.body;
+
+  // Validation
+  const errors = [];
+  if (!first_name || first_name.trim().length < 2) {
+    errors.push('Le prenom doit contenir au moins 2 caracteres.');
+  }
+  if (!last_name || last_name.trim().length < 2) {
+    errors.push('Le nom doit contenir au moins 2 caracteres.');
+  }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.push('Veuillez entrer une adresse email valide.');
+  }
+  // Check email uniqueness (exclude current participant)
+  if (errors.length === 0 && email.toLowerCase().trim() !== participant.email) {
+    if (Participant.emailExistsForGroup(email, req.group.id)) {
+      errors.push('Cette adresse email est deja inscrite dans ce groupe.');
+    }
+  }
+
+  if (errors.length > 0) {
+    req.flash('error', errors.join(' '));
+    return res.redirect(`/organizer/groups/${req.group.id}/participants/${participant.id}/edit`);
+  }
+
+  try {
+    Participant.update(participant.id, { first_name, last_name, email, wish1, wish2, wish3 });
+    req.flash('success', `${first_name.trim()} ${last_name.trim()} a ete mis a jour.`);
+    res.redirect(`/organizer/groups/${req.group.id}`);
+  } catch (error) {
+    console.error('Edit participant error:', error);
+    req.flash('error', 'Erreur lors de la modification du participant.');
+    res.redirect(`/organizer/groups/${req.group.id}/participants/${participant.id}/edit`);
+  }
+});
+
+/**
  * Delete participant
  */
 router.post('/participants/:id/delete', requireNotArchived, (req, res) => {
@@ -261,6 +325,37 @@ router.post('/draw/reset', requireNotArchived, (req, res) => {
   } catch (error) {
     console.error('Reset draw error:', error);
     req.flash('error', 'Erreur lors de la reinitialisation.');
+    res.redirect(`/organizer/groups/${req.group.id}/draw`);
+  }
+});
+
+router.post('/draw/resend/:assignmentId', requireNotArchived, async (req, res) => {
+  const assignmentId = parseInt(req.params.assignmentId, 10);
+
+  if (!Assignment.drawExistsByGroup(req.group.id)) {
+    req.flash('error', 'Aucun tirage effectue.');
+    return res.redirect(`/organizer/groups/${req.group.id}/draw`);
+  }
+
+  try {
+    const assignment = Assignment.findDecryptedById(assignmentId);
+
+    if (!assignment || assignment.group_id !== req.group.id) {
+      req.flash('error', 'Attribution non trouvee.');
+      return res.redirect(`/organizer/groups/${req.group.id}/draw`);
+    }
+
+    const group = Group.findById(req.group.id);
+    const groupName = group ? group.name : null;
+    const groupExtra = group ? { budget: group.budget, event_date: group.event_date } : {};
+
+    await MailerService.sendEmail(assignment, groupName, groupExtra);
+
+    req.flash('success', `Email renvoye a ${assignment.giver_first_name} ${assignment.giver_last_name}.`);
+    res.redirect(`/organizer/groups/${req.group.id}/draw`);
+  } catch (error) {
+    console.error('Resend email error:', error);
+    req.flash('error', `Erreur lors du renvoi de l'email : ${error.message}`);
     res.redirect(`/organizer/groups/${req.group.id}/draw`);
   }
 });

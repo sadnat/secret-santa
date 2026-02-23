@@ -6,10 +6,14 @@ if (participants.length > 0) {
   participantRows = participants.map(p => {
     const wishes = [p.wish1, p.wish2, p.wish3].filter(Boolean).map(w => escapeHtml(w)).join(', ');
     const date = new Date(p.created_at).toLocaleDateString('fr-FR');
-    const deleteForm = drawExists
-      ? '<span class="text-muted">-</span>'
+    const editBtn = !group.archived_at
+      ? `<a href="/organizer/groups/${group.id}/participants/${p.id}/edit" class="btn btn-small btn-primary">Editer</a> `
+      : '';
+    const deleteForm = drawExists || group.archived_at
+      ? ''
       : `<form action="/organizer/groups/${group.id}/participants/${p.id}/delete" method="POST" style="display:inline;" onsubmit="return confirm('Supprimer ?')"><input type="hidden" name="_csrf" value="${csrfToken}"><button type="submit" class="btn btn-small btn-danger">Supprimer</button></form>`;
-    return `<tr><td>${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}</td><td>${escapeHtml(p.email)}</td><td>${wishes || '-'}</td><td>${date}</td><td>${deleteForm}</td></tr>`;
+    const actions = editBtn + deleteForm || '<span class="text-muted">-</span>';
+    return `<tr><td>${escapeHtml(p.first_name)} ${escapeHtml(p.last_name)}</td><td>${escapeHtml(p.email)}</td><td>${wishes || '-'}</td><td>${date}</td><td class="actions">${actions}</td></tr>`;
   }).join('');
 }
 

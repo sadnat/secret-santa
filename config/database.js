@@ -262,6 +262,21 @@ function initialize() {
     )
   `);
 
+  // Create admin_logs table for activity tracking
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS admin_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      admin_id INTEGER NOT NULL,
+      admin_email TEXT NOT NULL,
+      action TEXT NOT NULL,
+      target_type TEXT,
+      target_id INTEGER,
+      details TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (admin_id) REFERENCES organizers(id) ON DELETE SET NULL
+    )
+  `);
+
   console.log('Database initialized successfully');
 }
 

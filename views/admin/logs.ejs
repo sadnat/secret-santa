@@ -1,0 +1,102 @@
+<%
+const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
+
+const actionLabels = {
+  promote_admin: 'Promotion admin',
+  demote_admin: 'Retrait admin',
+  delete_user: 'Suppression utilisateur',
+  delete_group: 'Suppression groupe'
+};
+
+const actionBadgeClass = {
+  promote_admin: 'badge-success',
+  demote_admin: 'badge-pending',
+  delete_user: 'badge-danger',
+  delete_group: 'badge-danger'
+};
+
+let logRows = '';
+if (logs.length === 0) {
+  logRows = `<tr><td colspan="6" style="text-align: center; color: #666; padding: 2rem;">Aucune activite enregistree.</td></tr>`;
+} else {
+  logRows = logs.map(log => {
+    const date = new Date(log.created_at).toLocaleString('fr-FR');
+    const label = actionLabels[log.action] || log.action;
+    const badgeClass = actionBadgeClass[log.action] || 'badge-pending';
+    const targetInfo = log.target_type ? `${log.target_type} #${log.target_id}` : '-';
+    return `<tr>
+      <td>${date}</td>
+      <td>${escapeHtml(log.admin_email)}</td>
+      <td><span class="badge ${badgeClass}">${escapeHtml(label)}</span></td>
+      <td>${escapeHtml(targetInfo)}</td>
+      <td>${escapeHtml(log.details || '-')}</td>
+    </tr>`;
+  }).join('');
+}
+
+const searchQuery = typeof search !== 'undefined' ? escapeHtml(search) : '';
+const currentPage = typeof page !== 'undefined' ? page : 1;
+const pages = typeof totalPages !== 'undefined' ? totalPages : 1;
+const total = typeof totalCount !== 'undefined' ? totalCount : 0;
+
+let paginationHtml = '';
+if (pages > 1) {
+  let links = '';
+  const qParam = searchQuery ? `&q=${encodeURIComponent(search)}` : '';
+  
+  if (currentPage > 1) {
+    links += `<a href="/admin/logs?page=${currentPage - 1}${qParam}" class="pagination-link">&laquo; Precedent</a>`;
+  }
+  
+  for (let i = 1; i <= pages; i++) {
+    if (i === 1 || i === pages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+      links += `<a href="/admin/logs?page=${i}${qParam}" class="pagination-link ${i === currentPage ? 'active' : ''}">${i}</a>`;
+    } else if (i === currentPage - 3 || i === currentPage + 3) {
+      links += `<span class="pagination-ellipsis">...</span>`;
+    }
+  }
+  
+  if (currentPage < pages) {
+    links += `<a href="/admin/logs?page=${currentPage + 1}${qParam}" class="pagination-link">Suivant &raquo;</a>`;
+  }
+  
+  paginationHtml = `<div class="pagination">${links}</div>`;
+}
+
+const body = `
+<div class="container admin-page">
+  <h1>Journal d'activite</h1>
+  
+  <p><a href="/admin">&larr; Retour au tableau de bord</a></p>
+
+  <div class="admin-toolbar">
+    <form action="/admin/logs" method="GET" class="search-form">
+      <input type="text" name="q" value="${searchQuery}" placeholder="Rechercher par action, email, details..." class="search-input">
+      <button type="submit" class="btn btn-primary btn-small">Rechercher</button>
+      ${searchQuery ? '<a href="/admin/logs" class="btn btn-secondary btn-small">Effacer</a>' : ''}
+    </form>
+    <div class="result-count">${total} entree${total !== 1 ? 's' : ''} ${searchQuery ? 'trouvee(s)' : 'au total'}</div>
+  </div>
+
+  <div class="table-wrapper">
+    <table class="admin-table data-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Admin</th>
+          <th>Action</th>
+          <th>Cible</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${logRows}
+      </tbody>
+    </table>
+  </div>
+
+  ${paginationHtml}
+</div>
+`;
+%>
+<%- include('../layout', { title: 'Journal d\\'activite', organizer, body }) %>

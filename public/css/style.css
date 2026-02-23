@@ -1206,6 +1206,11 @@ footer::before {
   color: #155724;
 }
 
+.badge-danger {
+  background: #f8d7da;
+  color: #721c24;
+}
+
 /* Logout button styled as nav link */
 .nav-logout-btn {
   background: none;

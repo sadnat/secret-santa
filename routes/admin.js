@@ -3,8 +3,27 @@ const router = express.Router();
 const Organizer = require('../models/organizer');
 const Group = require('../models/group');
 const Participant = require('../models/participant');
+const AdminLog = require('../models/admin-log');
 
 const ITEMS_PER_PAGE = 20;
+
+/**
+ * Helper: log an admin action
+ */
+function logAction(req, action, targetType, targetId, details) {
+  try {
+    AdminLog.create({
+      adminId: req.session.organizer.id,
+      adminEmail: req.session.organizer.email,
+      action,
+      targetType,
+      targetId,
+      details
+    });
+  } catch (e) {
+    console.error('Failed to log admin action:', e.message);
+  }
+}
 
 /**
  * Middleware: Require admin access
@@ -83,6 +102,9 @@ router.post('/users/:id/toggle-admin', (req, res) => {
   const newStatus = !Organizer.isAdmin(userId);
   Organizer.setAdmin(userId, newStatus);
   
+  const action = newStatus ? 'promote_admin' : 'demote_admin';
+  logAction(req, action, 'organizer', userId, `${user.first_name} ${user.last_name} (${user.email})`);
+
   const message = newStatus 
     ? `${user.first_name} ${user.last_name} est maintenant administrateur.`
     : `${user.first_name} ${user.last_name} n'est plus administrateur.`;
@@ -110,6 +132,7 @@ router.post('/users/:id/delete', (req, res) => {
   }
   
   Organizer.delete(userId);
+  logAction(req, 'delete_user', 'organizer', userId, `${user.first_name} ${user.last_name} (${user.email})`);
   
   req.flash('success', `Utilisateur ${user.first_name} ${user.last_name} supprime.`);
   res.redirect('/admin/users');
@@ -148,9 +171,31 @@ router.post('/groups/:id/delete', (req, res) => {
   }
   
   Group.delete(groupId);
+  logAction(req, 'delete_group', 'group', groupId, `"${group.name}" (code: ${group.code})`);
   
   req.flash('success', `Groupe "${group.name}" supprime.`);
   res.redirect('/admin/groups');
+});
+
+/**
+ * GET /admin/logs - View admin activity logs
+ */
+router.get('/logs', (req, res) => {
+  const search = req.query.q || '';
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = 30;
+
+  const logs = AdminLog.findAll({ search, page, limit });
+  const totalCount = AdminLog.countAll(search);
+  const totalPages = Math.ceil(totalCount / limit);
+
+  res.render('admin/logs', {
+    logs,
+    search,
+    page,
+    totalPages,
+    totalCount
+  });
 });
 
 module.exports = router;
