@@ -115,10 +115,24 @@ header {
   z-index: 10;
 }
 
-/* Default: no header emojis */
-header::before,
+/* Default: sparkle and gift on header */
+header::before {
+  content: "\2728";
+  display: block;
+  position: absolute;
+  left: 2rem;
+  top: 0.6rem;
+  font-size: 1.6rem;
+  animation: twinkle 2s ease-in-out infinite;
+}
+
 header::after {
-  display: none;
+  content: "\1F381";
+  display: block;
+  position: absolute;
+  right: 2rem;
+  top: 0.7rem;
+  font-size: 1.5rem;
 }
 
 /* Noel: tree and gift */
@@ -162,9 +176,9 @@ nav {
   opacity: 0.9;
 }
 
-/* Default: no logo emoji */
+/* Default: gift emoji on logo */
 .logo::before {
-  content: none;
+  content: "\1F381 ";
 }
 
 /* Noel: santa emoji */
@@ -215,9 +229,12 @@ footer {
   position: relative;
 }
 
-/* Default: no footer decoration */
+/* Default: gift + sparkle footer decoration */
 footer::before {
-  display: none;
+  content: "\1F381 \2728 \1F381 \2728 \1F381";
+  display: block;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.5rem;
 }
 
 /* Show/hide footer text based on theme */
@@ -256,10 +273,25 @@ body.theme-noel footer::before {
   overflow: hidden;
 }
 
-/* Default: no hero emojis */
-.hero::before,
+/* Default: sparkles on hero */
+.hero::before {
+  content: "\2728";
+  display: block;
+  position: absolute;
+  top: 1rem;
+  left: 2rem;
+  font-size: 2rem;
+  animation: twinkle 2s ease-in-out infinite;
+}
+
 .hero::after {
-  display: none;
+  content: "\2728";
+  display: block;
+  position: absolute;
+  top: 1rem;
+  right: 2rem;
+  font-size: 2rem;
+  animation: twinkle 2s ease-in-out infinite 0.5s;
 }
 
 /* Noel: stars */
@@ -289,10 +321,13 @@ body.theme-noel .hero::after {
   margin-bottom: 0.5rem;
 }
 
-/* Default: no hero h1 emojis */
-.hero h1::before,
+/* Default: gift + sparkle on hero h1 */
+.hero h1::before {
+  content: "\1F381 ";
+}
+
 .hero h1::after {
-  content: none;
+  content: " \2728";
 }
 
 /* Noel: santa + gift */
@@ -334,9 +369,15 @@ body.theme-noel .hero h1::after {
   transform: translateY(-2px);
 }
 
-/* Default: no stat-box ribbon */
+/* Default: ribbon on stat-box */
 .stat-box::before {
-  display: none;
+  content: "\1F380";
+  display: block;
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.2rem;
 }
 
 /* Noel: ribbon */
@@ -403,9 +444,9 @@ body.theme-noel .stat-box::before {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Default: no tree on secondary button */
+/* Default: gift on secondary button */
 .btn-secondary::before {
-  content: none;
+  content: "\1F381 ";
 }
 
 /* Noel: tree */
@@ -469,10 +510,13 @@ body.theme-noel .btn-secondary::before {
   margin-bottom: 2rem;
 }
 
-/* Default: no emojis */
-.how-it-works h2::before,
+/* Default: sparkles on how-it-works h2 */
+.how-it-works h2::before {
+  content: "\2728 ";
+}
+
 .how-it-works h2::after {
-  content: none;
+  content: " \2728";
 }
 
 /* Noel: stars */
@@ -520,9 +564,19 @@ body.theme-noel .how-it-works h2::after {
   position: relative;
 }
 
-/* Default: no gold dot */
+/* Default: gold dot on step number */
 .step-number::before {
-  display: none;
+  content: "";
+  display: block;
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background: var(--gold-color);
+  border-radius: 50%;
+  box-shadow: 0 0 4px var(--gold-color);
 }
 
 /* Noel: gold dot on step number */
@@ -545,9 +599,9 @@ body.theme-noel .step-number::before {
   margin-bottom: 0.5rem;
 }
 
-/* Default: no gift emoji */
+/* Default: sparkle after step h3 */
 .step h3::after {
-  content: none;
+  content: " \2728";
 }
 
 /* Noel: gift */
@@ -570,9 +624,9 @@ body.theme-noel .step h3::after {
   margin-bottom: 0.5rem;
 }
 
-/* Default: no santa on form */
+/* Default: gift on form page h1 */
 .form-page h1::before {
-  content: none;
+  content: "\1F381 ";
 }
 
 /* Noel: santa */
@@ -703,11 +757,7 @@ body.theme-noel .form-page h1::before {
 .success-icon {
   font-size: 4rem;
   margin-bottom: 1rem;
-}
-
-/* Noel: animate icon */
-body.theme-noel .success-icon {
-  animation: swing 1s ease-in-out infinite;
+  animation: swing 2s ease-in-out infinite;
 }
 
 .success-page h1 {
@@ -715,9 +765,9 @@ body.theme-noel .success-icon {
   margin-bottom: 0.5rem;
 }
 
-/* Default: no tree after success h1 */
+/* Default: sparkle after success h1 */
 .success-page h1::after {
-  content: none;
+  content: " \2728";
 }
 
 /* Noel: tree */
@@ -807,10 +857,13 @@ body.theme-noel .success-page h1::after {
   margin-bottom: 0.5rem;
 }
 
-/* Default: no tree on admin h1 */
-.admin-page h1::before,
+/* Default: gifts on admin h1 */
+.admin-page h1::before {
+  content: "\1F381 ";
+}
+
 .admin-page h1::after {
-  content: none;
+  content: " \1F381";
 }
 
 /* Noel: trees */
@@ -1140,9 +1193,10 @@ body.theme-noel .admin-page h1::after {
   position: relative;
 }
 
-/* Default: no gift on code */
+/* Default: gift on code */
 .code-value::after {
-  content: none;
+  content: " \1F381";
+  font-size: 1rem;
 }
 
 /* Noel: gift */
@@ -1242,10 +1296,13 @@ body.theme-noel .code-value::after {
   margin-bottom: 2rem;
 }
 
-/* Default: no emojis */
-.features h2::before,
+/* Default: sparkles on features h2 */
+.features h2::before {
+  content: "\2728 ";
+}
+
 .features h2::after {
-  content: none;
+  content: " \2728";
 }
 
 /* Noel: gifts */
@@ -1281,9 +1338,9 @@ body.theme-noel .features h2::after {
   margin-bottom: 0.5rem;
 }
 
-/* Default: no snowflake */
+/* Default: gift on feature h3 */
 .feature h3::before {
-  content: none;
+  content: "\1F381 ";
 }
 
 /* Noel: snowflake */
