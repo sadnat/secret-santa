@@ -9,9 +9,6 @@ const body = `
 <div class="admin-page">
   <h1>Parametres du groupe</h1>
 
-  ${message ? '<div class="alert alert-success">' + escapeHtml(message) + '</div>' : ''}
-  ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
-
   ${isArchived ? '<div class="alert alert-warning">Ce groupe est archive. Les modifications sont desactivees.</div>' : ''}
 
   <section class="settings-section">

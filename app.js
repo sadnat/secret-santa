@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const { doubleCsrf } = require('csrf-csrf');
+const flash = require('connect-flash');
 const SqliteStore = require('better-sqlite3-session-store')(session);
 const Database = require('better-sqlite3');
 
@@ -107,6 +108,9 @@ app.use(session({
   }
 }));
 
+// ===== Flash Messages =====
+app.use(flash());
+
 // ===== CSRF Protection =====
 const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
   getSecret: () => process.env.SESSION_SECRET,
@@ -124,11 +128,13 @@ const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
 // Apply CSRF protection to all non-GET requests
 app.use(doubleCsrfProtection);
 
-// Make session, CSRF token, and app URL available in views
+// Make session, CSRF token, flash messages, and app URL available in views
 app.use((req, res, next) => {
   res.locals.organizer = req.session.organizer || null;
   res.locals.csrfToken = generateCsrfToken(req, res);
   res.locals.appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+  res.locals.flashSuccess = req.flash('success');
+  res.locals.flashError = req.flash('error');
   next();
 });
 

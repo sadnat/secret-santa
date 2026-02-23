@@ -21,9 +21,6 @@ const body = `
   </div>
   <p class="group-info">Groupe : <strong>${escapeHtml(group.name)}</strong></p>
 
-  ${message ? '<div class="alert alert-success">' + escapeHtml(message) + '</div>' : ''}
-  ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
-
   <div class="admin-stats">
     <div class="stat-card">
       <span class="stat-value">${participants.length}</span>

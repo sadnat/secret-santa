@@ -32,6 +32,16 @@
   </header>
 
   <main>
+    <% if (typeof flashSuccess !== 'undefined' && flashSuccess.length > 0) { %>
+      <% flashSuccess.forEach(function(msg) { %>
+        <div class="alert alert-success"><%= msg %></div>
+      <% }); %>
+    <% } %>
+    <% if (typeof flashError !== 'undefined' && flashError.length > 0) { %>
+      <% flashError.forEach(function(msg) { %>
+        <div class="alert alert-error"><%= msg %></div>
+      <% }); %>
+    <% } %>
     <%- body %>
   </main>
 

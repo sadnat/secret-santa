@@ -245,9 +245,7 @@ router.get('/dashboard', requireAuth, (req, res) => {
   res.render('organizer/dashboard', {
     title: 'Mes Groupes',
     organizer: req.session.organizer,
-    groups,
-    message: req.query.message,
-    error: req.query.error
+    groups
   });
 });
 
@@ -259,15 +257,18 @@ router.post('/groups/create', requireAuth, (req, res) => {
   const organizerId = getOrganizerId(req);
 
   if (!group_name || group_name.trim().length < 2) {
-    return res.redirect('/organizer/dashboard?error=' + encodeURIComponent('Le nom du groupe doit contenir au moins 2 caracteres.'));
+    req.flash('error', 'Le nom du groupe doit contenir au moins 2 caracteres.');
+    return res.redirect('/organizer/dashboard');
   }
 
   try {
     Group.create(organizerId, group_name);
-    res.redirect('/organizer/dashboard?message=' + encodeURIComponent('Groupe cree avec succes.'));
+    req.flash('success', 'Groupe cree avec succes.');
+    res.redirect('/organizer/dashboard');
   } catch (error) {
     console.error('Create group error:', error);
-    res.redirect('/organizer/dashboard?error=' + encodeURIComponent('Erreur lors de la creation du groupe.'));
+    req.flash('error', 'Erreur lors de la creation du groupe.');
+    res.redirect('/organizer/dashboard');
   }
 });
 
@@ -282,14 +283,17 @@ router.post('/groups/:id/delete', requireAuth, (req, res) => {
     // Verify group belongs to this organizer
     const group = Group.findByIdAndOrganizer(id, organizerId);
     if (!group) {
-      return res.redirect('/organizer/dashboard?error=' + encodeURIComponent('Groupe non trouve.'));
+      req.flash('error', 'Groupe non trouve.');
+      return res.redirect('/organizer/dashboard');
     }
 
     Group.delete(id);
-    res.redirect('/organizer/dashboard?message=' + encodeURIComponent('Groupe supprime avec succes.'));
+    req.flash('success', 'Groupe supprime avec succes.');
+    res.redirect('/organizer/dashboard');
   } catch (error) {
     console.error('Delete group error:', error);
-    res.redirect('/organizer/dashboard?error=' + encodeURIComponent('Erreur lors de la suppression du groupe.'));
+    req.flash('error', 'Erreur lors de la suppression du groupe.');
+    res.redirect('/organizer/dashboard');
   }
 });
 
@@ -304,9 +308,7 @@ router.get('/settings', requireAuth, (req, res) => {
   res.render('organizer/settings', {
     title: 'Parametres du compte',
     organizer: req.session.organizer,
-    fullOrganizer: organizer,
-    message: req.query.message,
-    error: req.query.error
+    fullOrganizer: organizer
   });
 });
 
@@ -320,8 +322,7 @@ router.get('/settings/delete', requireAuth, (req, res) => {
   res.render('organizer/delete', {
     title: 'Supprimer le compte',
     organizer: req.session.organizer,
-    groupCount: groups.length,
-    error: req.query.error
+    groupCount: groups.length
   });
 });
 
@@ -336,19 +337,21 @@ router.post('/settings/delete', requireAuth, async (req, res) => {
     // Verify password
     const isValid = await Organizer.verifyPasswordById(organizerId, password);
     if (!isValid) {
-      return res.redirect('/organizer/settings/delete?error=' + encodeURIComponent('Mot de passe incorrect.'));
+      req.flash('error', 'Mot de passe incorrect.');
+      return res.redirect('/organizer/settings/delete');
     }
 
     // Delete all data
     Organizer.delete(organizerId);
 
-    // Destroy session
-    req.session.destroy();
-
-    res.redirect('/?message=' + encodeURIComponent('Compte supprime avec succes.'));
+    // Destroy session and redirect
+    req.session.destroy(() => {
+      res.redirect('/');
+    });
   } catch (error) {
     console.error('Delete account error:', error);
-    res.redirect('/organizer/settings/delete?error=' + encodeURIComponent('Erreur lors de la suppression.'));
+    req.flash('error', 'Erreur lors de la suppression.');
+    res.redirect('/organizer/settings/delete');
   }
 });
 

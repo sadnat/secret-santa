@@ -21,9 +21,6 @@ const body = `
     <strong>Conseil :</strong> Pour interdire completement les cadeaux entre deux personnes, vous devez creer deux regles. Par exemple, pour que A et B ne puissent pas s'offrir de cadeaux, creez une regle "A ne peut pas offrir a B" ET une regle "B ne peut pas offrir a A".
   </div>
 
-  ${message ? '<div class="alert alert-success">' + escapeHtml(message) + '</div>' : ''}
-  ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
-
   ${drawExists ? '<div class="alert alert-warning">Le tirage a deja ete effectue. Les exclusions ne peuvent plus etre modifiees.</div>' : ''}
 
   ${!drawExists && participants.length >= 2 ? `

@@ -28,7 +28,8 @@ function requireGroupAccess(req, res, next) {
   const group = Group.findByIdAndOrganizer(groupId, organizerId);
   
   if (!group) {
-    return res.redirect('/organizer/dashboard?error=' + encodeURIComponent('Groupe non trouve ou acces refuse.'));
+    req.flash('error', 'Groupe non trouve ou acces refuse.');
+    return res.redirect('/organizer/dashboard');
   }
   
   req.group = group;
@@ -41,7 +42,8 @@ function requireGroupAccess(req, res, next) {
  */
 function requireNotArchived(req, res, next) {
   if (req.group.archived_at) {
-    return res.redirect(`/organizer/groups/${req.group.id}?error=` + encodeURIComponent('Ce groupe est archive. Aucune modification possible.'));
+    req.flash('error', 'Ce groupe est archive. Aucune modification possible.');
+    return res.redirect(`/organizer/groups/${req.group.id}`);
   }
   next();
 }
@@ -68,9 +70,7 @@ router.get('/', (req, res) => {
     drawExists,
     pendingEmails,
     sentEmails,
-    smtpConfigured,
-    message: req.query.message,
-    error: req.query.error
+    smtpConfigured
   });
 });
 
@@ -82,14 +82,17 @@ router.post('/participants/:id/delete', requireNotArchived, (req, res) => {
   
   try {
     if (Assignment.drawExistsByGroup(req.group.id)) {
-      return res.redirect(`/organizer/groups/${req.group.id}?error=` + encodeURIComponent('Impossible de supprimer un participant apres le tirage.'));
+      req.flash('error', 'Impossible de supprimer un participant apres le tirage.');
+      return res.redirect(`/organizer/groups/${req.group.id}`);
     }
 
     Participant.delete(id, req.group.id);
-    res.redirect(`/organizer/groups/${req.group.id}?message=` + encodeURIComponent('Participant supprime.'));
+    req.flash('success', 'Participant supprime.');
+    res.redirect(`/organizer/groups/${req.group.id}`);
   } catch (error) {
     console.error('Delete participant error:', error);
-    res.redirect(`/organizer/groups/${req.group.id}?error=` + encodeURIComponent('Erreur lors de la suppression.'));
+    req.flash('error', 'Erreur lors de la suppression.');
+    res.redirect(`/organizer/groups/${req.group.id}`);
   }
 });
 
@@ -104,9 +107,7 @@ router.get('/exclusions', (req, res) => {
     title: 'Regles d\'exclusion',
     participants,
     exclusions,
-    drawExists,
-    message: req.query.message,
-    error: req.query.error
+    drawExists
   });
 });
 
@@ -114,26 +115,31 @@ router.post('/exclusions/add', requireNotArchived, (req, res) => {
   const { giver_id, receiver_id } = req.body;
 
   if (Assignment.drawExistsByGroup(req.group.id)) {
-    return res.redirect(`/organizer/groups/${req.group.id}/exclusions?error=` + encodeURIComponent('Impossible de modifier les exclusions apres le tirage.'));
+    req.flash('error', 'Impossible de modifier les exclusions apres le tirage.');
+    return res.redirect(`/organizer/groups/${req.group.id}/exclusions`);
   }
 
   if (giver_id === receiver_id) {
-    return res.redirect(`/organizer/groups/${req.group.id}/exclusions?error=` + encodeURIComponent('Une personne ne peut pas s\'exclure elle-meme.'));
+    req.flash('error', 'Une personne ne peut pas s\'exclure elle-meme.');
+    return res.redirect(`/organizer/groups/${req.group.id}/exclusions`);
   }
 
   const giver = Participant.findByIdAndGroup(giver_id, req.group.id);
   const receiver = Participant.findByIdAndGroup(receiver_id, req.group.id);
 
   if (!giver || !receiver) {
-    return res.redirect(`/organizer/groups/${req.group.id}/exclusions?error=` + encodeURIComponent('Participants non valides.'));
+    req.flash('error', 'Participants non valides.');
+    return res.redirect(`/organizer/groups/${req.group.id}/exclusions`);
   }
 
   try {
     Exclusion.create(parseInt(giver_id), parseInt(receiver_id));
-    res.redirect(`/organizer/groups/${req.group.id}/exclusions?message=` + encodeURIComponent('Regle d\'exclusion ajoutee.'));
+    req.flash('success', 'Regle d\'exclusion ajoutee.');
+    res.redirect(`/organizer/groups/${req.group.id}/exclusions`);
   } catch (error) {
     console.error('Add exclusion error:', error);
-    res.redirect(`/organizer/groups/${req.group.id}/exclusions?error=` + encodeURIComponent('Erreur lors de l\'ajout.'));
+    req.flash('error', 'Erreur lors de l\'ajout.');
+    res.redirect(`/organizer/groups/${req.group.id}/exclusions`);
   }
 });
 
@@ -141,15 +147,18 @@ router.post('/exclusions/:id/delete', requireNotArchived, (req, res) => {
   const { id } = req.params;
 
   if (Assignment.drawExistsByGroup(req.group.id)) {
-    return res.redirect(`/organizer/groups/${req.group.id}/exclusions?error=` + encodeURIComponent('Impossible de modifier les exclusions apres le tirage.'));
+    req.flash('error', 'Impossible de modifier les exclusions apres le tirage.');
+    return res.redirect(`/organizer/groups/${req.group.id}/exclusions`);
   }
 
   try {
     Exclusion.deleteByGroup(id, req.group.id);
-    res.redirect(`/organizer/groups/${req.group.id}/exclusions?message=` + encodeURIComponent('Regle d\'exclusion supprimee.'));
+    req.flash('success', 'Regle d\'exclusion supprimee.');
+    res.redirect(`/organizer/groups/${req.group.id}/exclusions`);
   } catch (error) {
     console.error('Delete exclusion error:', error);
-    res.redirect(`/organizer/groups/${req.group.id}/exclusions?error=` + encodeURIComponent('Erreur lors de la suppression.'));
+    req.flash('error', 'Erreur lors de la suppression.');
+    res.redirect(`/organizer/groups/${req.group.id}/exclusions`);
   }
 });
 
@@ -172,52 +181,57 @@ router.get('/draw', (req, res) => {
     canDraw,
     pendingEmails,
     sentEmails,
-    smtpConfigured,
-    message: req.query.message,
-    error: req.query.error
+    smtpConfigured
   });
 });
 
 router.post('/draw/perform', requireNotArchived, (req, res) => {
   if (Assignment.drawExistsByGroup(req.group.id)) {
-    return res.redirect(`/organizer/groups/${req.group.id}/draw?error=` + encodeURIComponent('Un tirage a deja ete effectue.'));
+    req.flash('error', 'Un tirage a deja ete effectue.');
+    return res.redirect(`/organizer/groups/${req.group.id}/draw`);
   }
 
   const result = DrawService.performDraw(req.group.id);
 
   if (result.success) {
-    res.redirect(`/organizer/groups/${req.group.id}/draw?message=` + encodeURIComponent(result.message));
+    req.flash('success', result.message);
   } else {
-    res.redirect(`/organizer/groups/${req.group.id}/draw?error=` + encodeURIComponent(result.message));
+    req.flash('error', result.message);
   }
+  res.redirect(`/organizer/groups/${req.group.id}/draw`);
 });
 
 router.post('/draw/reset', requireNotArchived, (req, res) => {
   try {
     Assignment.clearAllByGroup(req.group.id);
-    res.redirect(`/organizer/groups/${req.group.id}/draw?message=` + encodeURIComponent('Tirage reinitialise.'));
+    req.flash('success', 'Tirage reinitialise.');
+    res.redirect(`/organizer/groups/${req.group.id}/draw`);
   } catch (error) {
     console.error('Reset draw error:', error);
-    res.redirect(`/organizer/groups/${req.group.id}/draw?error=` + encodeURIComponent('Erreur lors de la reinitialisation.'));
+    req.flash('error', 'Erreur lors de la reinitialisation.');
+    res.redirect(`/organizer/groups/${req.group.id}/draw`);
   }
 });
 
 router.post('/draw/send-emails', requireNotArchived, async (req, res) => {
   if (!Assignment.drawExistsByGroup(req.group.id)) {
-    return res.redirect(`/organizer/groups/${req.group.id}/draw?error=` + encodeURIComponent('Aucun tirage effectue.'));
+    req.flash('error', 'Aucun tirage effectue.');
+    return res.redirect(`/organizer/groups/${req.group.id}/draw`);
   }
 
   try {
     const result = await MailerService.sendAllEmails(req.group.id);
 
     if (result.success) {
-      res.redirect(`/organizer/groups/${req.group.id}/draw?message=` + encodeURIComponent(result.message));
+      req.flash('success', result.message);
     } else {
-      res.redirect(`/organizer/groups/${req.group.id}/draw?error=` + encodeURIComponent(result.message));
+      req.flash('error', result.message);
     }
+    res.redirect(`/organizer/groups/${req.group.id}/draw`);
   } catch (error) {
     console.error('Send emails error:', error);
-    res.redirect(`/organizer/groups/${req.group.id}/draw?error=` + encodeURIComponent('Erreur lors de l\'envoi des emails.'));
+    req.flash('error', 'Erreur lors de l\'envoi des emails.');
+    res.redirect(`/organizer/groups/${req.group.id}/draw`);
   }
 });
 
@@ -225,39 +239,43 @@ router.post('/draw/send-emails', requireNotArchived, async (req, res) => {
 
 router.get('/settings', (req, res) => {
   res.render('group/settings', {
-    title: 'Parametres du groupe',
-    message: req.query.message,
-    error: req.query.error
+    title: 'Parametres du groupe'
   });
 });
 
 router.post('/settings/regenerate-code', requireNotArchived, (req, res) => {
   try {
     Group.updateCode(req.group.id);
-    res.redirect(`/organizer/groups/${req.group.id}/settings?message=` + encodeURIComponent('Code d\'invitation regenere.'));
+    req.flash('success', 'Code d\'invitation regenere.');
+    res.redirect(`/organizer/groups/${req.group.id}/settings`);
   } catch (error) {
     console.error('Regenerate code error:', error);
-    res.redirect(`/organizer/groups/${req.group.id}/settings?error=` + encodeURIComponent('Erreur lors de la regeneration.'));
+    req.flash('error', 'Erreur lors de la regeneration.');
+    res.redirect(`/organizer/groups/${req.group.id}/settings`);
   }
 });
 
 router.post('/settings/archive', (req, res) => {
   try {
     Group.archive(req.group.id);
-    res.redirect(`/organizer/groups/${req.group.id}/settings?message=` + encodeURIComponent('Groupe archive avec succes.'));
+    req.flash('success', 'Groupe archive avec succes.');
+    res.redirect(`/organizer/groups/${req.group.id}/settings`);
   } catch (error) {
     console.error('Archive error:', error);
-    res.redirect(`/organizer/groups/${req.group.id}/settings?error=` + encodeURIComponent('Erreur lors de l\'archivage.'));
+    req.flash('error', 'Erreur lors de l\'archivage.');
+    res.redirect(`/organizer/groups/${req.group.id}/settings`);
   }
 });
 
 router.post('/settings/unarchive', (req, res) => {
   try {
     Group.unarchive(req.group.id);
-    res.redirect(`/organizer/groups/${req.group.id}/settings?message=` + encodeURIComponent('Groupe desarchive avec succes.'));
+    req.flash('success', 'Groupe desarchive avec succes.');
+    res.redirect(`/organizer/groups/${req.group.id}/settings`);
   } catch (error) {
     console.error('Unarchive error:', error);
-    res.redirect(`/organizer/groups/${req.group.id}/settings?error=` + encodeURIComponent('Erreur lors du desarchivage.'));
+    req.flash('error', 'Erreur lors du desarchivage.');
+    res.redirect(`/organizer/groups/${req.group.id}/settings`);
   }
 });
 

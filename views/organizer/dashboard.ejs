@@ -24,9 +24,6 @@ const body = `
 <div class="admin-page">
   <h1>Mes Groupes</h1>
 
-  ${message ? '<div class="alert alert-success">' + escapeHtml(message) + '</div>' : ''}
-  ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
-
   <section class="create-group-section">
     <h2>Creer un nouveau groupe</h2>
     <form action="/organizer/groups/create" method="POST" class="inline-form" style="display: flex; gap: 10px; align-items: flex-end; margin-bottom: 30px;">
