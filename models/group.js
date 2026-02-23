@@ -52,7 +52,7 @@ const Group = {
   },
 
   /**
-   * Update group details
+   * Update group details (name, budget, event_date)
    */
   update(id, data) {
     const updates = [];
@@ -61,6 +61,14 @@ const Group = {
     if (data.name) {
       updates.push('name = ?');
       values.push(data.name.trim());
+    }
+    if (typeof data.budget !== 'undefined') {
+      updates.push('budget = ?');
+      values.push(data.budget ? data.budget.trim() : null);
+    }
+    if (typeof data.event_date !== 'undefined') {
+      updates.push('event_date = ?');
+      values.push(data.event_date || null);
     }
 
     if (updates.length === 0) return;

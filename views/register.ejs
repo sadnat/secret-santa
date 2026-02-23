@@ -8,6 +8,14 @@ const body = `
   <h1>Inscription</h1>
   ${groupNameDisplay ? `<p class="group-context">Vous rejoignez le groupe : <strong>${escapeHtml(groupNameDisplay)}</strong></p>` : ''}
 
+  ${typeof group !== 'undefined' && group && (group.budget || group.event_date) ? `
+  <div class="alert alert-info">
+    ${group.budget ? '<strong>Budget sugere :</strong> ' + escapeHtml(group.budget) : ''}
+    ${group.budget && group.event_date ? ' &mdash; ' : ''}
+    ${group.event_date ? '<strong>Date de l&#39;evenement :</strong> ' + new Date(group.event_date + 'T00:00:00').toLocaleDateString('fr-FR') : ''}
+  </div>
+  ` : ''}
+
   ${error ? '<div class="alert alert-error">' + escapeHtml(error) + '</div>' : ''}
 
   <form action="${formAction}" method="POST" class="register-form">

@@ -243,6 +243,31 @@ router.get('/settings', (req, res) => {
   });
 });
 
+router.post('/settings/update', requireNotArchived, (req, res) => {
+  const { name, budget, event_date } = req.body;
+
+  if (!name || name.trim().length < 2) {
+    req.flash('error', 'Le nom du groupe doit contenir au moins 2 caracteres.');
+    return res.redirect(`/organizer/groups/${req.group.id}/settings`);
+  }
+
+  try {
+    Group.update(req.group.id, { name, budget, event_date });
+
+    // Update the group in res.locals for subsequent middleware
+    req.group.name = name.trim();
+    req.group.budget = budget ? budget.trim() : null;
+    req.group.event_date = event_date || null;
+
+    req.flash('success', 'Informations du groupe mises a jour.');
+    res.redirect(`/organizer/groups/${req.group.id}/settings`);
+  } catch (error) {
+    console.error('Update group error:', error);
+    req.flash('error', 'Erreur lors de la mise a jour.');
+    res.redirect(`/organizer/groups/${req.group.id}/settings`);
+  }
+});
+
 router.post('/settings/regenerate-code', requireNotArchived, (req, res) => {
   try {
     Group.updateCode(req.group.id);

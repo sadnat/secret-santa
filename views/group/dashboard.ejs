@@ -19,7 +19,10 @@ const body = `
     <h1>Tableau de bord</h1>
     <a href="/organizer/dashboard" class="btn btn-small btn-secondary">&larr; Retour aux groupes</a>
   </div>
-  <p class="group-info">Groupe : <strong>${escapeHtml(group.name)}</strong></p>
+  <p class="group-info">Groupe : <strong>${escapeHtml(group.name)}</strong>
+    ${group.budget ? ' &mdash; Budget : <strong>' + escapeHtml(group.budget) + '</strong>' : ''}
+    ${group.event_date ? ' &mdash; Date : <strong>' + new Date(group.event_date + 'T00:00:00').toLocaleDateString('fr-FR') + '</strong>' : ''}
+  </p>
 
   <div class="admin-stats">
     <div class="stat-card">

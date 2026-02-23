@@ -54,7 +54,7 @@ const MailerService = {
   /**
    * Generate email HTML content
    */
-  generateEmailContent(giver, receiver, groupName) {
+  generateEmailContent(giver, receiver, groupName, groupInfo_extra) {
     const wishes = [receiver.wish1, receiver.wish2, receiver.wish3].filter(Boolean);
     const wishesHtml = wishes.length > 0
       ? `
@@ -66,6 +66,9 @@ const MailerService = {
       : '<p><em>Cette personne n\'a pas indique de souhaits particuliers.</em></p>';
 
     const groupInfo = groupName ? `<p style="color: #666; font-size: 0.9em;">Groupe : ${this.escapeHtml(groupName)}</p>` : '';
+    const extraInfo = groupInfo_extra || {}; 
+    const budgetHtml = extraInfo.budget ? `<p><strong>Budget sugere :</strong> ${this.escapeHtml(extraInfo.budget)}</p>` : '';
+    const eventDateHtml = extraInfo.event_date ? `<p><strong>Date de l'evenement :</strong> ${new Date(extraInfo.event_date + 'T00:00:00').toLocaleDateString('fr-FR')}</p>` : '';
 
     return `
       <!DOCTYPE html>
@@ -135,6 +138,9 @@ const MailerService = {
             ${this.escapeHtml(receiver.first_name)} ${this.escapeHtml(receiver.last_name)}
           </div>
           ${wishesHtml}
+          ${budgetHtml || eventDateHtml ? '<hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">' : ''}
+          ${budgetHtml}
+          ${eventDateHtml}
           <p>N'oublie pas : c'est un secret !</p>
           <div class="footer">
             <p>Joyeuses fetes !</p>
@@ -148,13 +154,16 @@ const MailerService = {
   /**
    * Generate plain text email content
    */
-  generateTextContent(giver, receiver, groupName) {
+  generateTextContent(giver, receiver, groupName, groupInfo_extra) {
     const wishes = [receiver.wish1, receiver.wish2, receiver.wish3].filter(Boolean);
     const wishesText = wishes.length > 0
       ? `\nSes idees de cadeaux :\n${wishes.map(w => `- ${w}`).join('\n')}\n`
       : '\nCette personne n\'a pas indique de souhaits particuliers.\n';
 
     const groupInfo = groupName ? `\nGroupe : ${groupName}\n` : '';
+    const extraInfo = groupInfo_extra || {};
+    const budgetText = extraInfo.budget ? `Budget sugere : ${extraInfo.budget}\n` : '';
+    const eventDateText = extraInfo.event_date ? `Date de l'evenement : ${new Date(extraInfo.event_date + 'T00:00:00').toLocaleDateString('fr-FR')}\n` : '';
 
     return `
 Secret Santa
@@ -165,6 +174,7 @@ Le tirage au sort a ete effectue et tu dois offrir un cadeau a :
 
 ${receiver.first_name} ${receiver.last_name}
 ${wishesText}
+${budgetText}${eventDateText}
 N'oublie pas : c'est un secret !
 
 Joyeuses fetes !
@@ -187,7 +197,7 @@ Joyeuses fetes !
   /**
    * Send email to a single participant
    */
-  async sendEmail(assignment, groupName) {
+  async sendEmail(assignment, groupName, groupExtra) {
     const transporter = this.createTransporter();
 
     const subject = groupName
@@ -201,12 +211,14 @@ Joyeuses fetes !
       text: this.generateTextContent(
         { first_name: assignment.giver_first_name },
         assignment.receiver,
-        groupName
+        groupName,
+        groupExtra
       ),
       html: this.generateEmailContent(
         { first_name: assignment.giver_first_name },
         assignment.receiver,
-        groupName
+        groupName,
+        groupExtra
       )
     };
 
@@ -321,9 +333,10 @@ Joyeuses fetes !
       };
     }
 
-    // Get group info for group name
+    // Get group info for group name, budget, and event date
     const group = Group.findById(groupId);
     const groupName = group ? group.name : null;
+    const groupExtra = group ? { budget: group.budget, event_date: group.event_date } : {};
 
     const assignments = Assignment.findAllDecryptedByGroup(groupId);
     const pending = assignments.filter(a => !a.email_sent);
@@ -346,7 +359,7 @@ Joyeuses fetes !
     for (const assignment of pending) {
       try {
         console.log(`Sending email to ${assignment.giver_email}...`);
-        await this.sendEmail(assignment, groupName);
+        await this.sendEmail(assignment, groupName, groupExtra);
         console.log(`Email sent successfully to ${assignment.giver_email}`);
         results.sent++;
       } catch (error) {

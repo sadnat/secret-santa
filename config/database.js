@@ -101,6 +101,17 @@ function initialize() {
     )
   `);
 
+  // Add budget and event_date columns to groups
+  const groupColumns = db.prepare('PRAGMA table_info(groups)').all();
+  const hasBudget = groupColumns.some(col => col.name === 'budget');
+  if (!hasBudget) {
+    db.exec('ALTER TABLE groups ADD COLUMN budget TEXT DEFAULT NULL');
+  }
+  const hasEventDate = groupColumns.some(col => col.name === 'event_date');
+  if (!hasEventDate) {
+    db.exec('ALTER TABLE groups ADD COLUMN event_date TEXT DEFAULT NULL');
+  }
+
   // Migration: Move groups from organizers to groups table
   const groupsCount = db.prepare('SELECT COUNT(*) as count FROM groups').get().count;
   if (groupsCount === 0) {

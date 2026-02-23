@@ -4,6 +4,8 @@ const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</
 const appUrl = typeof locals.appUrl !== 'undefined' && locals.appUrl ? locals.appUrl : 'https://santa.twibox.fr';
 const inviteLink = `${appUrl}/join/${group.code}`;
 const isArchived = group.archived_at !== null;
+const eventDateValue = group.event_date || '';
+const budgetValue = group.budget || '';
 
 const body = `
 <div class="admin-page">
@@ -13,11 +15,39 @@ const body = `
 
   <section class="settings-section">
     <h2>Informations du groupe</h2>
+    ${!isArchived ? `
+    <form action="/organizer/groups/${group.id}/settings/update" method="POST" class="settings-form">
+      <input type="hidden" name="_csrf" value="${csrfToken}">
+      <div class="form-group">
+        <label for="name">Nom du groupe</label>
+        <input type="text" id="name" name="name" required minlength="2"
+               value="${escapeHtml(group.name)}" placeholder="Ex: Noel 2026">
+      </div>
+      <div class="form-row" style="display: flex; gap: 15px; flex-wrap: wrap;">
+        <div class="form-group" style="flex: 1; min-width: 200px;">
+          <label for="budget">Budget (optionnel)</label>
+          <input type="text" id="budget" name="budget"
+                 value="${escapeHtml(budgetValue)}" placeholder="Ex: 20-30 euros">
+          <small>Indiquez une fourchette de prix pour les cadeaux.</small>
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 200px;">
+          <label for="event_date">Date de l&#39;evenement (optionnel)</label>
+          <input type="date" id="event_date" name="event_date"
+                 value="${eventDateValue}">
+          <small>La date de l&#39;echange de cadeaux.</small>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </form>
+    ` : `
     <div class="info-card">
       <p><strong>Nom du groupe :</strong> ${escapeHtml(group.name)}</p>
+      <p><strong>Budget :</strong> ${budgetValue ? escapeHtml(budgetValue) : '<em>Non defini</em>'}</p>
+      <p><strong>Date :</strong> ${eventDateValue ? new Date(eventDateValue + 'T00:00:00').toLocaleDateString('fr-FR') : '<em>Non definie</em>'}</p>
       <p><strong>Code Invitation :</strong> ${escapeHtml(group.code)}</p>
-      <p><strong>Statut :</strong> ${isArchived ? '<span class="status-archived">Archive</span>' : '<span class="status-active">Actif</span>'}</p>
+      <p><strong>Statut :</strong> <span class="status-archived">Archive</span></p>
     </div>
+    `}
   </section>
 
   <section class="settings-section">
