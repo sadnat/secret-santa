@@ -4,6 +4,7 @@ const Organizer = require('../models/organizer');
 const Group = require('../models/group');
 const Participant = require('../models/participant');
 const AdminLog = require('../models/admin-log');
+const { getConfig, setConfig } = require('../config/database');
 
 const ITEMS_PER_PAGE = 20;
 
@@ -52,12 +53,14 @@ router.get('/', (req, res) => {
   const groupCount = Group.countAll();
   const participantCount = Participant.countAll();
   const pendingDrawCount = Group.countPendingDraw();
+  const currentTheme = getConfig('theme') || 'default';
   
   res.render('admin/dashboard', {
     organizerCount,
     groupCount,
     participantCount,
-    pendingDrawCount
+    pendingDrawCount,
+    currentTheme
   });
 });
 
@@ -196,6 +199,26 @@ router.get('/logs', (req, res) => {
     totalPages,
     totalCount
   });
+});
+
+/**
+ * POST /admin/settings/theme - Change the active theme
+ */
+router.post('/settings/theme', (req, res) => {
+  const { theme } = req.body;
+  const allowedThemes = ['default', 'noel'];
+
+  if (!theme || !allowedThemes.includes(theme)) {
+    req.flash('error', 'Theme invalide.');
+    return res.redirect('/admin');
+  }
+
+  setConfig('theme', theme);
+  const label = theme === 'noel' ? 'Noel' : 'Par defaut';
+  logAction(req, 'change_theme', 'config', null, `Theme change vers: ${label}`);
+
+  req.flash('success', `Theme "${label}" active.`);
+  res.redirect('/admin');
 });
 
 module.exports = router;

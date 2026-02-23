@@ -7,7 +7,7 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
+<body class="theme-<%= typeof theme !== 'undefined' ? theme : 'default' %>">
   <header>
     <nav>
       <a href="/" class="logo">Secret Santa</a>
@@ -34,19 +34,20 @@
   <main>
     <% if (typeof flashSuccess !== 'undefined' && flashSuccess.length > 0) { %>
       <% flashSuccess.forEach(function(msg) { %>
-        <div class="alert alert-success"><%= msg %></div>
+        <div class="alert alert-success flash-animate"><%= msg %></div>
       <% }); %>
     <% } %>
     <% if (typeof flashError !== 'undefined' && flashError.length > 0) { %>
       <% flashError.forEach(function(msg) { %>
-        <div class="alert alert-error"><%= msg %></div>
+        <div class="alert alert-error flash-animate"><%= msg %></div>
       <% }); %>
     <% } %>
     <%- body %>
   </main>
 
   <footer>
-    <p>Secret Santa - Joyeuses fetes !</p>
+    <p class="footer-default">Secret Santa</p>
+    <p class="footer-noel">Secret Santa - Joyeuses fetes !</p>
   </footer>
 </body>
 </html>

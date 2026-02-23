@@ -128,13 +128,14 @@ const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
 // Apply CSRF protection to all non-GET requests
 app.use(doubleCsrfProtection);
 
-// Make session, CSRF token, flash messages, and app URL available in views
+// Make session, CSRF token, flash messages, theme, and app URL available in views
 app.use((req, res, next) => {
   res.locals.organizer = req.session.organizer || null;
   res.locals.csrfToken = generateCsrfToken(req, res);
   res.locals.appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
   res.locals.flashSuccess = req.flash('success');
   res.locals.flashError = req.flash('error');
+  res.locals.theme = db.getConfig('theme') || 'default';
   next();
 });
 

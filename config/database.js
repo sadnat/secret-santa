@@ -277,11 +277,38 @@ function initialize() {
     )
   `);
 
+  // Seed default theme if not set
+  const existingTheme = db.prepare('SELECT value FROM config WHERE key = ?').get('theme');
+  if (!existingTheme) {
+    db.prepare('INSERT INTO config (key, value) VALUES (?, ?)').run('theme', 'default');
+  }
+
   console.log('Database initialized successfully');
+}
+
+/**
+ * Get a config value by key
+ * @param {string} key
+ * @returns {string|null}
+ */
+function getConfig(key) {
+  const row = db.prepare('SELECT value FROM config WHERE key = ?').get(key);
+  return row ? row.value : null;
+}
+
+/**
+ * Set a config value (upsert)
+ * @param {string} key
+ * @param {string} value
+ */
+function setConfig(key, value) {
+  db.prepare('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)').run(key, value);
 }
 
 module.exports = {
   db,
   initialize,
-  generateGroupCode
+  generateGroupCode,
+  getConfig,
+  setConfig
 };

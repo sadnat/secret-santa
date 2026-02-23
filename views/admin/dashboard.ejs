@@ -1,4 +1,6 @@
 <%
+const activeTheme = typeof currentTheme !== 'undefined' ? currentTheme : 'default';
+
 const body = `
 <div class="container admin-page">
   <h1>Administration</h1>
@@ -24,6 +26,39 @@ const body = `
     </div>
   </div>
 
+  <section class="settings-section">
+    <h2>Theme du site</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1rem;">Choisissez l'apparence du site. Le theme de Noel ajoute des decorations festives (flocons, emojis, animations).</p>
+    <div class="theme-selector">
+      <form action="/admin/settings/theme" method="POST" style="display: contents;">
+        <input type="hidden" name="_csrf" value="${csrfToken}">
+        <input type="hidden" name="theme" value="default" id="theme-default-input">
+        <div class="theme-option ${activeTheme === 'default' ? 'active' : ''}" onclick="document.getElementById('theme-default-input').closest('form').querySelector('[name=theme]').value='default'; this.closest('form').submit();">
+          <div class="theme-preview">
+            <span class="swatch" style="background: #5C6BC0;"></span>
+            <span class="swatch" style="background: #26A69A;"></span>
+          </div>
+          <h4>Par defaut</h4>
+          <p>Design sobre et moderne, ideal toute l'annee.</p>
+          ${activeTheme === 'default' ? '<span class="badge badge-active">Actif</span>' : '<button type="submit" class="btn btn-small btn-primary">Activer</button>'}
+        </div>
+      </form>
+      <form action="/admin/settings/theme" method="POST" style="display: contents;">
+        <input type="hidden" name="_csrf" value="${csrfToken}">
+        <input type="hidden" name="theme" value="noel">
+        <div class="theme-option ${activeTheme === 'noel' ? 'active' : ''}" onclick="this.closest('form').submit();">
+          <div class="theme-preview">
+            <span class="swatch" style="background: #c41e3a;"></span>
+            <span class="swatch" style="background: #228b22;"></span>
+          </div>
+          <h4>Noel</h4>
+          <p>Flocons, emojis festifs et couleurs de Noel.</p>
+          ${activeTheme === 'noel' ? '<span class="badge badge-active">Actif</span>' : '<button type="submit" class="btn btn-small btn-primary">Activer</button>'}
+        </div>
+      </form>
+    </div>
+  </section>
+
   <div class="admin-nav">
     <h2>Actions rapides</h2>
     <ul>
@@ -42,35 +77,13 @@ const body = `
     margin: 2rem 0;
     flex-wrap: wrap;
   }
-  .stat-card {
-    background: var(--card-bg, #fff);
-    border-radius: 8px;
-    padding: 2rem;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    min-width: 150px;
-    flex: 1;
-  }
   .stat-card h3 {
     font-size: 2.5rem;
     margin: 0;
-    color: var(--primary-color, #c41e3a);
   }
   .stat-card p {
     margin: 0.5rem 0 1rem;
     color: #666;
-  }
-  .stat-card.stat-warning {
-    background: #fff3cd;
-  }
-  .stat-card.stat-warning h3 {
-    color: #856404;
-  }
-  .stat-card.stat-success {
-    background: #d4edda;
-  }
-  .stat-card.stat-success h3 {
-    color: #28a745;
   }
   .admin-nav {
     margin-top: 2rem;
@@ -83,7 +96,7 @@ const body = `
     margin: 0.5rem 0;
   }
   .admin-nav a {
-    color: var(--primary-color, #c41e3a);
+    color: var(--primary-color);
   }
 </style>
 `;

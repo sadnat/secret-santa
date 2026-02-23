@@ -1,31 +1,50 @@
-/* Variables */
+/* ============================================
+   SECRET SANTA - THEME SYSTEM
+   Default theme: Indigo/Teal (all year)
+   Christmas theme: Red/Green (activated via admin)
+   ============================================ */
+
+/* === DEFAULT THEME VARIABLES (Indigo/Teal) === */
 :root {
-  --primary-color: #c41e3a;
-  --primary-dark: #a01830;
-  --secondary-color: #228b22;
-  --secondary-dark: #1a6b1a;
-  --background-color: #f5f5f5;
+  --primary-color: #5C6BC0;
+  --primary-dark: #3F51B5;
+  --primary-light: rgba(92, 107, 192, 0.1);
+  --secondary-color: #26A69A;
+  --secondary-dark: #00897B;
+  --background-color: #f8f9fa;
   --card-background: #ffffff;
   --text-color: #333333;
   --text-muted: #666666;
-  --border-color: #dddddd;
+  --border-color: #e0e0e0;
   --success-color: #28a745;
   --warning-color: #ffc107;
   --danger-color: #dc3545;
   --info-color: #17a2b8;
   --gold-color: #d4af37;
+  --hero-gradient-start: #f0f2ff;
+  --hero-gradient-end: #e8f5f3;
+  --header-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --card-hover-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
-/* Christmas Animations */
+/* === CHRISTMAS THEME OVERRIDES === */
+body.theme-noel {
+  --primary-color: #c41e3a;
+  --primary-dark: #a01830;
+  --primary-light: rgba(196, 30, 58, 0.1);
+  --secondary-color: #228b22;
+  --secondary-dark: #1a6b1a;
+  --background-color: #f5f5f5;
+  --hero-gradient-start: #fff8dc;
+  --hero-gradient-end: #ffe4e1;
+  --header-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* === ANIMATIONS (defined globally, only activated in Noel theme) === */
 @keyframes snowfall {
-  0% {
-    transform: translateY(-10px) rotate(0deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(100vh) rotate(360deg);
-    opacity: 0.3;
-  }
+  0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(360deg); opacity: 0.3; }
 }
 
 @keyframes twinkle {
@@ -38,14 +57,19 @@
   50% { transform: rotate(3deg); }
 }
 
-/* Reset */
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* === RESET === */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* Base styles */
+/* === BASE STYLES === */
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background-color: var(--background-color);
@@ -58,9 +82,15 @@ body {
   overflow-x: hidden;
 }
 
-/* Snowflakes background */
+/* Default: no snowflakes */
 body::before {
-  content: "❄ ❅ ❆ ❄ ❅ ❆ ❄ ❅ ❆ ❄ ❅ ❆ ❄ ❅ ❆";
+  display: none;
+}
+
+/* Noel: snowflakes */
+body.theme-noel::before {
+  content: "\2744  \2745  \2746  \2744  \2745  \2746  \2744  \2745  \2746  \2744  \2745  \2746  \2744  \2745  \2746";
+  display: block;
   position: fixed;
   top: -20px;
   left: 0;
@@ -75,17 +105,26 @@ body::before {
   letter-spacing: 3rem;
 }
 
-/* Header */
+/* === HEADER === */
 header {
   background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
   color: white;
   padding: 1rem 2rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--header-shadow);
   position: relative;
+  z-index: 10;
 }
 
-header::before {
-  content: "🎄";
+/* Default: no header emojis */
+header::before,
+header::after {
+  display: none;
+}
+
+/* Noel: tree and gift */
+body.theme-noel header::before {
+  content: "\1F384";
+  display: block;
   position: absolute;
   left: 2rem;
   top: 0.6rem;
@@ -94,8 +133,9 @@ header::before {
   transform-origin: top center;
 }
 
-header::after {
-  content: "🎁";
+body.theme-noel header::after {
+  content: "\1F381";
+  display: block;
   position: absolute;
   right: 2rem;
   top: 0.7rem;
@@ -115,28 +155,48 @@ nav {
   font-weight: bold;
   color: white;
   text-decoration: none;
+  transition: opacity 0.2s;
 }
 
+.logo:hover {
+  opacity: 0.9;
+}
+
+/* Default: no logo emoji */
 .logo::before {
-  content: "🎅 ";
+  content: none;
+}
+
+/* Noel: santa emoji */
+body.theme-noel .logo::before {
+  content: "\1F385 ";
 }
 
 .nav-links {
   display: flex;
   gap: 1.5rem;
+  align-items: center;
 }
 
-.nav-links a {
+.nav-links a,
+.nav-logout-btn {
   color: rgba(255, 255, 255, 0.9);
   text-decoration: none;
-  transition: color 0.2s;
+  transition: color 0.2s, opacity 0.2s;
+  background: none;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
 }
 
-.nav-links a:hover {
+.nav-links a:hover,
+.nav-logout-btn:hover {
   color: white;
+  opacity: 1;
 }
 
-/* Main content */
+/* === MAIN CONTENT === */
 main {
   flex: 1;
   max-width: 1200px;
@@ -145,7 +205,7 @@ main {
   width: 100%;
 }
 
-/* Footer */
+/* === FOOTER === */
 footer {
   background-color: var(--primary-dark);
   color: white;
@@ -155,26 +215,57 @@ footer {
   position: relative;
 }
 
+/* Default: no footer decoration */
 footer::before {
-  content: "🎄 ❄️ 🎁 ❄️ 🎄";
+  display: none;
+}
+
+/* Show/hide footer text based on theme */
+.footer-noel {
+  display: none;
+}
+
+.footer-default {
+  display: block;
+}
+
+body.theme-noel .footer-noel {
+  display: block;
+}
+
+body.theme-noel .footer-default {
+  display: none;
+}
+
+/* Noel: footer decoration */
+body.theme-noel footer::before {
+  content: "\1F384 \2744\FE0F \1F381 \2744\FE0F \1F384";
   display: block;
   margin-bottom: 0.5rem;
   letter-spacing: 0.5rem;
 }
 
-/* Hero section */
+/* === HERO SECTION === */
 .hero {
   text-align: center;
   padding: 3rem 1rem;
-  background: linear-gradient(135deg, #fff8dc, #ffe4e1);
+  background: linear-gradient(135deg, var(--hero-gradient-start), var(--hero-gradient-end));
   border-radius: 12px;
   margin-bottom: 2rem;
   position: relative;
   overflow: hidden;
 }
 
-.hero::before {
-  content: "⭐";
+/* Default: no hero emojis */
+.hero::before,
+.hero::after {
+  display: none;
+}
+
+/* Noel: stars */
+body.theme-noel .hero::before {
+  content: "\2B50";
+  display: block;
   position: absolute;
   top: 1rem;
   left: 2rem;
@@ -182,8 +273,9 @@ footer::before {
   animation: twinkle 2s ease-in-out infinite;
 }
 
-.hero::after {
-  content: "⭐";
+body.theme-noel .hero::after {
+  content: "\2B50";
+  display: block;
   position: absolute;
   top: 1rem;
   right: 2rem;
@@ -197,12 +289,19 @@ footer::before {
   margin-bottom: 0.5rem;
 }
 
-.hero h1::before {
-  content: "🎅 ";
+/* Default: no hero h1 emojis */
+.hero h1::before,
+.hero h1::after {
+  content: none;
 }
 
-.hero h1::after {
-  content: " 🎁";
+/* Noel: santa + gift */
+body.theme-noel .hero h1::before {
+  content: "\1F385 ";
+}
+
+body.theme-noel .hero h1::after {
+  content: " \1F381";
 }
 
 .subtitle {
@@ -211,7 +310,7 @@ footer::before {
   margin-bottom: 2rem;
 }
 
-/* Stats */
+/* === STATS === */
 .stats {
   display: flex;
   justify-content: center;
@@ -223,14 +322,27 @@ footer::before {
   background: white;
   padding: 1.5rem 2rem;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--card-shadow);
   text-align: center;
   position: relative;
   border-top: 4px solid var(--primary-color);
+  transition: box-shadow 0.3s, transform 0.3s;
 }
 
+.stat-box:hover {
+  box-shadow: var(--card-hover-shadow);
+  transform: translateY(-2px);
+}
+
+/* Default: no stat-box ribbon */
 .stat-box::before {
-  content: "🎀";
+  display: none;
+}
+
+/* Noel: ribbon */
+body.theme-noel .stat-box::before {
+  content: "\1F380";
+  display: block;
   position: absolute;
   top: -12px;
   left: 50%;
@@ -250,7 +362,7 @@ footer::before {
   font-size: 0.9rem;
 }
 
-/* Buttons */
+/* === BUTTONS === */
 .btn {
   display: inline-block;
   padding: 0.75rem 1.5rem;
@@ -260,7 +372,15 @@ footer::before {
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
 }
 
 .btn-primary {
@@ -270,6 +390,7 @@ footer::before {
 
 .btn-primary:hover {
   background-color: var(--primary-dark);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .btn-secondary {
@@ -279,10 +400,17 @@ footer::before {
 
 .btn-secondary:hover {
   background-color: var(--secondary-dark);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+/* Default: no tree on secondary button */
 .btn-secondary::before {
-  content: "🎄 ";
+  content: none;
+}
+
+/* Noel: tree */
+body.theme-noel .btn-secondary::before {
+  content: "\1F384 ";
 }
 
 .btn-danger {
@@ -303,6 +431,11 @@ footer::before {
   background-color: #e0a800;
 }
 
+.btn-success {
+  background-color: var(--success-color);
+  color: white;
+}
+
 .btn-small {
   padding: 0.4rem 0.8rem;
   font-size: 0.85rem;
@@ -316,6 +449,7 @@ footer::before {
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 .cta-buttons {
@@ -324,7 +458,7 @@ footer::before {
   justify-content: center;
 }
 
-/* Steps section */
+/* === HOW IT WORKS / STEPS === */
 .how-it-works {
   margin-top: 2rem;
 }
@@ -335,12 +469,19 @@ footer::before {
   margin-bottom: 2rem;
 }
 
-.how-it-works h2::before {
-  content: "🌟 ";
+/* Default: no emojis */
+.how-it-works h2::before,
+.how-it-works h2::after {
+  content: none;
 }
 
-.how-it-works h2::after {
-  content: " 🌟";
+/* Noel: stars */
+body.theme-noel .how-it-works h2::before {
+  content: "\1F31F ";
+}
+
+body.theme-noel .how-it-works h2::after {
+  content: " \1F31F";
 }
 
 .steps {
@@ -354,7 +495,13 @@ footer::before {
   padding: 2rem;
   border-radius: 8px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--card-shadow);
+  transition: box-shadow 0.3s, transform 0.3s;
+}
+
+.step:hover {
+  box-shadow: var(--card-hover-shadow);
+  transform: translateY(-3px);
 }
 
 .step-number {
@@ -373,8 +520,15 @@ footer::before {
   position: relative;
 }
 
+/* Default: no gold dot */
 .step-number::before {
+  display: none;
+}
+
+/* Noel: gold dot on step number */
+body.theme-noel .step-number::before {
   content: "";
+  display: block;
   position: absolute;
   top: -8px;
   left: 50%;
@@ -391,18 +545,24 @@ footer::before {
   margin-bottom: 0.5rem;
 }
 
+/* Default: no gift emoji */
 .step h3::after {
-  content: " 🎁";
+  content: none;
 }
 
-/* Form styles */
+/* Noel: gift */
+body.theme-noel .step h3::after {
+  content: " \1F381";
+}
+
+/* === FORM STYLES === */
 .form-page {
   max-width: 600px;
   margin: 0 auto;
   background: white;
   padding: 2rem;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--card-shadow);
 }
 
 .form-page h1 {
@@ -410,8 +570,14 @@ footer::before {
   margin-bottom: 0.5rem;
 }
 
+/* Default: no santa on form */
 .form-page h1::before {
-  content: "🎅 ";
+  content: none;
+}
+
+/* Noel: santa */
+body.theme-noel .form-page h1::before {
+  content: "\1F385 ";
 }
 
 .form-section {
@@ -460,6 +626,7 @@ footer::before {
   border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-group input:focus,
@@ -467,7 +634,7 @@ footer::before {
 .form-group textarea:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
+  box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 .form-group small {
@@ -477,11 +644,15 @@ footer::before {
   font-size: 0.85rem;
 }
 
-/* Alerts */
+/* === ALERTS === */
 .alert {
   padding: 1rem;
   border-radius: 6px;
   margin-bottom: 1rem;
+}
+
+.alert.flash-animate {
+  animation: fadeInDown 0.3s ease-out;
 }
 
 .alert-success {
@@ -490,10 +661,20 @@ footer::before {
   border: 1px solid #c3e6cb;
 }
 
+.alert-success::before {
+  content: "\2713  ";
+  font-weight: bold;
+}
+
 .alert-error {
   background-color: #f8d7da;
   color: #721c24;
   border: 1px solid #f5c6cb;
+}
+
+.alert-error::before {
+  content: "\2717  ";
+  font-weight: bold;
 }
 
 .alert-warning {
@@ -508,7 +689,7 @@ footer::before {
   border: 1px solid #bee5eb;
 }
 
-/* Success page */
+/* === SUCCESS PAGE === */
 .success-page {
   text-align: center;
   max-width: 600px;
@@ -516,22 +697,32 @@ footer::before {
   background: white;
   padding: 3rem;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--card-shadow);
 }
 
 .success-icon {
   font-size: 4rem;
   margin-bottom: 1rem;
-  animation: swing 1s ease-in-out infinite;
 }
 
-.success-page h1::after {
-  content: " 🎄";
+/* Noel: animate icon */
+body.theme-noel .success-icon {
+  animation: swing 1s ease-in-out infinite;
 }
 
 .success-page h1 {
   color: var(--secondary-color);
   margin-bottom: 0.5rem;
+}
+
+/* Default: no tree after success h1 */
+.success-page h1::after {
+  content: none;
+}
+
+/* Noel: tree */
+body.theme-noel .success-page h1::after {
+  content: " \1F384";
 }
 
 .success-info {
@@ -555,7 +746,7 @@ footer::before {
   padding: 0.5rem 0;
 }
 
-/* Error page */
+/* === ERROR PAGE === */
 .error-page {
   text-align: center;
   max-width: 600px;
@@ -563,7 +754,7 @@ footer::before {
   background: white;
   padding: 3rem;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--card-shadow);
 }
 
 .error-icon {
@@ -581,7 +772,7 @@ footer::before {
   margin-bottom: 1.5rem;
 }
 
-/* Login page */
+/* === LOGIN PAGE === */
 .login-page {
   max-width: 400px;
 }
@@ -603,12 +794,12 @@ footer::before {
   color: white;
 }
 
-/* Admin pages */
+/* === ADMIN PAGES === */
 .admin-page {
   background: white;
   padding: 2rem;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--card-shadow);
 }
 
 .admin-page h1 {
@@ -616,12 +807,19 @@ footer::before {
   margin-bottom: 0.5rem;
 }
 
-.admin-page h1::before {
-  content: "🎄 ";
+/* Default: no tree on admin h1 */
+.admin-page h1::before,
+.admin-page h1::after {
+  content: none;
 }
 
-.admin-page h1::after {
-  content: " 🎄";
+/* Noel: trees */
+body.theme-noel .admin-page h1::before {
+  content: "\1F384 ";
+}
+
+body.theme-noel .admin-page h1::after {
+  content: " \1F384";
 }
 
 .admin-page > p {
@@ -642,6 +840,12 @@ footer::before {
   padding: 1.5rem;
   border-radius: 8px;
   text-align: center;
+  transition: box-shadow 0.3s, transform 0.3s;
+}
+
+.stat-card:hover {
+  box-shadow: var(--card-hover-shadow);
+  transform: translateY(-2px);
 }
 
 .stat-card .stat-value {
@@ -677,9 +881,10 @@ footer::before {
   display: flex;
   gap: 1rem;
   margin: 1.5rem 0;
+  flex-wrap: wrap;
 }
 
-/* Data tables */
+/* === DATA TABLES === */
 .table-wrapper {
   overflow-x: auto;
 }
@@ -702,18 +907,61 @@ footer::before {
   font-weight: 600;
 }
 
-.data-table tr:hover {
-  background: #f8f9fa;
+/* Zebra striping */
+.data-table tbody tr:nth-child(even) {
+  background: #fafbfc;
 }
 
-/* Sections */
+.data-table tr:hover {
+  background: #f0f1f3;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+}
+
+.admin-table tbody tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+.admin-table tr:hover {
+  background: #f0f1f3;
+}
+
+.admin-table code {
+  background: #e9ecef;
+  padding: 0.125rem 0.25rem;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+.admin-table small {
+  color: var(--text-muted);
+}
+
+/* === SECTIONS === */
 .participants-section,
 .exclusions-list-section,
 .add-exclusion-section,
 .draw-action-section,
 .draw-results-section,
 .email-section,
-.reset-section {
+.reset-section,
+.add-participant-section {
   margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--border-color);
@@ -725,7 +973,8 @@ footer::before {
 .draw-action-section h2,
 .draw-results-section h2,
 .email-section h2,
-.reset-section h2 {
+.reset-section h2,
+.add-participant-section h2 {
   color: var(--secondary-color);
   margin-bottom: 1rem;
 }
@@ -735,7 +984,7 @@ footer::before {
   font-style: italic;
 }
 
-/* Exclusion form */
+/* === EXCLUSION FORM === */
 .exclusion-form .form-row {
   display: flex;
   align-items: flex-end;
@@ -759,7 +1008,7 @@ footer::before {
   font-weight: bold;
 }
 
-/* Draw page */
+/* === DRAW PAGE === */
 .draw-status {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -772,6 +1021,12 @@ footer::before {
   padding: 1.5rem;
   border-radius: 8px;
   text-align: center;
+  transition: box-shadow 0.3s, transform 0.3s;
+}
+
+.status-card:hover {
+  box-shadow: var(--card-hover-shadow);
+  transform: translateY(-2px);
 }
 
 .status-card h3 {
@@ -807,14 +1062,14 @@ footer::before {
 }
 
 .security-notice::before {
-  content: "🔒 ";
+  content: "\1F512 ";
 }
 
 .email-actions {
   margin-top: 1rem;
 }
 
-/* Badges */
+/* === BADGES === */
 .badge {
   display: inline-block;
   padding: 0.25rem 0.5rem;
@@ -832,7 +1087,22 @@ footer::before {
   color: #856404;
 }
 
-/* Text utilities */
+.badge-archived {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.badge-active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.badge-danger {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* === TEXT UTILITIES === */
 .text-muted {
   color: var(--text-muted);
 }
@@ -845,7 +1115,7 @@ footer::before {
   color: #856404;
 }
 
-/* Invite box */
+/* === INVITE BOX === */
 .invite-box {
   background: #f8f9fa;
   padding: 1.5rem;
@@ -870,8 +1140,14 @@ footer::before {
   position: relative;
 }
 
+/* Default: no gift on code */
 .code-value::after {
-  content: " 🎁";
+  content: none;
+}
+
+/* Noel: gift */
+body.theme-noel .code-value::after {
+  content: " \1F381";
   font-size: 1rem;
 }
 
@@ -898,11 +1174,7 @@ footer::before {
   white-space: nowrap;
 }
 
-.btn-success {
-  background-color: var(--success-color);
-  color: white;
-}
-
+/* === SETTINGS === */
 .settings-section {
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
@@ -951,7 +1223,15 @@ footer::before {
   margin-bottom: 1rem;
 }
 
-/* Features section */
+.header-with-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* === FEATURES SECTION === */
 .features {
   margin-top: 3rem;
 }
@@ -962,12 +1242,19 @@ footer::before {
   margin-bottom: 2rem;
 }
 
-.features h2::before {
-  content: "🎁 ";
+/* Default: no emojis */
+.features h2::before,
+.features h2::after {
+  content: none;
 }
 
-.features h2::after {
-  content: " 🎁";
+/* Noel: gifts */
+body.theme-noel .features h2::before {
+  content: "\1F381 ";
+}
+
+body.theme-noel .features h2::after {
+  content: " \1F381";
 }
 
 .feature-list {
@@ -980,7 +1267,13 @@ footer::before {
   background: white;
   padding: 1.5rem;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--card-shadow);
+  transition: box-shadow 0.3s, transform 0.3s;
+}
+
+.feature:hover {
+  box-shadow: var(--card-hover-shadow);
+  transform: translateY(-3px);
 }
 
 .feature h3 {
@@ -988,11 +1281,17 @@ footer::before {
   margin-bottom: 0.5rem;
 }
 
+/* Default: no snowflake */
 .feature h3::before {
-  content: "❄️ ";
+  content: none;
 }
 
-/* Join form */
+/* Noel: snowflake */
+body.theme-noel .feature h3::before {
+  content: "\2744\FE0F ";
+}
+
+/* === JOIN FORM === */
 .join-form {
   margin-top: 1.5rem;
 }
@@ -1001,7 +1300,206 @@ footer::before {
   text-align: center;
 }
 
-/* Responsive */
+/* === ADMIN TOOLBAR === */
+.admin-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.search-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.search-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  min-width: 250px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.result-count {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* === PAGINATION === */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+}
+
+.pagination-link {
+  display: inline-block;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.pagination-link:hover {
+  background-color: #f0f0f0;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.pagination-link.active {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.pagination-ellipsis {
+  padding: 0.4rem 0.5rem;
+  color: var(--text-muted);
+}
+
+/* === WARNING / DANGER ZONES === */
+.warning-box {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-left: 4px solid #dc3545;
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.warning-box h2 {
+  color: #dc3545;
+  margin-bottom: 0.75rem;
+}
+
+.warning-box ul {
+  margin: 1rem 0 0 1.5rem;
+}
+
+.warning-box li {
+  margin: 0.5rem 0;
+}
+
+.danger-zone {
+  background: #fff5f5;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.danger-zone h2 {
+  color: #dc3545;
+}
+
+.delete-form {
+  margin-top: 1.5rem;
+}
+
+.delete-form .form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.archive-form {
+  margin-top: 1rem;
+}
+
+/* === STATUS BADGES === */
+.status-active {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.status-archived {
+  color: #6c757d;
+  font-weight: 600;
+}
+
+/* === ACTIONS COLUMN === */
+.actions {
+  white-space: nowrap;
+}
+
+.actions form {
+  margin-right: 0.25rem;
+}
+
+/* === THEME SELECTOR (Admin) === */
+.theme-selector {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.theme-option {
+  flex: 1;
+  min-width: 200px;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 2px solid var(--border-color);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.theme-option:hover {
+  border-color: var(--primary-color);
+  box-shadow: var(--card-hover-shadow);
+}
+
+.theme-option.active {
+  border-color: var(--primary-color);
+  background: var(--primary-light);
+}
+
+.theme-option h4 {
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.theme-option p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.theme-preview {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.theme-preview .swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* === RESPONSIVE === */
 @media (max-width: 768px) {
   .hero h1 {
     font-size: 2rem;
@@ -1056,171 +1554,17 @@ footer::before {
   .search-form {
     width: 100%;
   }
-}
 
-/* Warning box for delete page */
-.warning-box {
-  background: #fff3cd;
-  border: 1px solid #ffc107;
-  border-left: 4px solid #dc3545;
-  border-radius: 6px;
-  padding: 1.5rem;
-  margin: 1.5rem 0;
-}
+  .header-with-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 
-.warning-box h2 {
-  color: #dc3545;
-  margin-bottom: 0.75rem;
-}
+  .admin-actions {
+    flex-direction: column;
+  }
 
-.warning-box ul {
-  margin: 1rem 0 0 1.5rem;
-}
-
-.warning-box li {
-  margin: 0.5rem 0;
-}
-
-/* Danger zone section */
-.danger-zone {
-  background: #fff5f5;
-  border: 1px solid #f5c6cb;
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-top: 2rem;
-}
-
-.danger-zone h2 {
-  color: #dc3545;
-}
-
-/* Delete form */
-.delete-form {
-  margin-top: 1.5rem;
-}
-
-.delete-form .form-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-/* Archive form */
-.archive-form {
-  margin-top: 1rem;
-}
-
-/* Status badges */
-.status-active {
-  color: #28a745;
-  font-weight: 600;
-}
-
-.status-archived {
-  color: #6c757d;
-  font-weight: 600;
-}
-
-/* Admin toolbar (search + result count) */
-.admin-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin: 1.5rem 0;
-}
-
-.search-form {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.search-input {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 0.9rem;
-  min-width: 250px;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
-}
-
-.result-count {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
-/* Pagination */
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.25rem;
-  margin: 1.5rem 0;
-  flex-wrap: wrap;
-}
-
-.pagination-link {
-  display: inline-block;
-  padding: 0.4rem 0.75rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  text-decoration: none;
-  color: var(--text-color);
-  font-size: 0.9rem;
-  transition: all 0.2s;
-}
-
-.pagination-link:hover {
-  background-color: #f0f0f0;
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-.pagination-link.active {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-  color: white;
-}
-
-.pagination-ellipsis {
-  padding: 0.4rem 0.5rem;
-  color: var(--text-muted);
-}
-
-/* Badge variants */
-.badge-archived {
-  background: #e2e3e5;
-  color: #383d41;
-}
-
-.badge-active {
-  background: #d4edda;
-  color: #155724;
-}
-
-.badge-danger {
-  background: #f8d7da;
-  color: #721c24;
-}
-
-/* Logout button styled as nav link */
-.nav-logout-btn {
-  background: none;
-  border: none;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  padding: 0;
-  text-decoration: none;
-}
-.nav-logout-btn:hover {
-  text-decoration: underline;
+  .theme-selector {
+    flex-direction: column;
+  }
 }
