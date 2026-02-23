@@ -1,36 +1,80 @@
 <%
 const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
 
-let userRows = users.map(user => {
-  const date = new Date(user.created_at).toLocaleDateString('fr-FR');
-  return `<tr>
-    <td>${user.id}</td>
-    <td>${escapeHtml(user.first_name)} ${escapeHtml(user.last_name)}</td>
-    <td>${escapeHtml(user.email)}</td>
-    <td>${user.is_verified ? 'Oui' : 'Non'}</td>
-    <td>${user.is_admin ? 'Oui' : 'Non'}</td>
-    <td>${date}</td>
-    <td class="actions">
-      <form action="/admin/users/${user.id}/toggle-admin" method="POST" style="display:inline;">
-        <input type="hidden" name="_csrf" value="${csrfToken}">
-        <button type="submit" class="btn btn-small ${user.is_admin ? 'btn-secondary' : 'btn-primary'}">
-          ${user.is_admin ? 'Retirer admin' : 'Rendre admin'}
-        </button>
-      </form>
-      <form action="/admin/users/${user.id}/delete" method="POST" style="display:inline;" 
-            onsubmit="return confirm('Etes-vous sur de vouloir supprimer cet utilisateur ? Cette action est irreversible.');">
-        <input type="hidden" name="_csrf" value="${csrfToken}">
-        <button type="submit" class="btn btn-small btn-danger">Supprimer</button>
-      </form>
-    </td>
-  </tr>`;
-}).join('');
+let userRows = '';
+if (users.length === 0) {
+  userRows = `<tr><td colspan="8" style="text-align: center; color: #666; padding: 2rem;">Aucun utilisateur trouve.</td></tr>`;
+} else {
+  userRows = users.map(user => {
+    const date = new Date(user.created_at).toLocaleDateString('fr-FR');
+    return `<tr>
+      <td>${user.id}</td>
+      <td>${escapeHtml(user.first_name)} ${escapeHtml(user.last_name)}</td>
+      <td>${escapeHtml(user.email)}</td>
+      <td>${user.group_count}</td>
+      <td>${user.is_verified ? '<span class="badge badge-success">Oui</span>' : '<span class="badge badge-pending">Non</span>'}</td>
+      <td>${user.is_admin ? '<span class="badge badge-success">Oui</span>' : 'Non'}</td>
+      <td>${date}</td>
+      <td class="actions">
+        <form action="/admin/users/${user.id}/toggle-admin" method="POST" style="display:inline;">
+          <input type="hidden" name="_csrf" value="${csrfToken}">
+          <button type="submit" class="btn btn-small ${user.is_admin ? 'btn-secondary' : 'btn-primary'}">
+            ${user.is_admin ? 'Retirer admin' : 'Rendre admin'}
+          </button>
+        </form>
+        <form action="/admin/users/${user.id}/delete" method="POST" style="display:inline;" 
+              onsubmit="return confirm('Etes-vous sur de vouloir supprimer cet utilisateur ? Cette action est irreversible.');">
+          <input type="hidden" name="_csrf" value="${csrfToken}">
+          <button type="submit" class="btn btn-small btn-danger">Supprimer</button>
+        </form>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+const searchQuery = typeof search !== 'undefined' ? escapeHtml(search) : '';
+const currentPage = typeof page !== 'undefined' ? page : 1;
+const pages = typeof totalPages !== 'undefined' ? totalPages : 1;
+const total = typeof totalCount !== 'undefined' ? totalCount : 0;
+
+let paginationHtml = '';
+if (pages > 1) {
+  let links = '';
+  const qParam = searchQuery ? `&q=${encodeURIComponent(search)}` : '';
+  
+  if (currentPage > 1) {
+    links += `<a href="/admin/users?page=${currentPage - 1}${qParam}" class="pagination-link">&laquo; Precedent</a>`;
+  }
+  
+  for (let i = 1; i <= pages; i++) {
+    if (i === 1 || i === pages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+      links += `<a href="/admin/users?page=${i}${qParam}" class="pagination-link ${i === currentPage ? 'active' : ''}">${i}</a>`;
+    } else if (i === currentPage - 3 || i === currentPage + 3) {
+      links += `<span class="pagination-ellipsis">...</span>`;
+    }
+  }
+  
+  if (currentPage < pages) {
+    links += `<a href="/admin/users?page=${currentPage + 1}${qParam}" class="pagination-link">Suivant &raquo;</a>`;
+  }
+  
+  paginationHtml = `<div class="pagination">${links}</div>`;
+}
 
 const body = `
 <div class="container admin-page">
   <h1>Gestion des utilisateurs</h1>
   
   <p><a href="/admin">&larr; Retour au tableau de bord</a></p>
+
+  <div class="admin-toolbar">
+    <form action="/admin/users" method="GET" class="search-form">
+      <input type="text" name="q" value="${searchQuery}" placeholder="Rechercher par nom ou email..." class="search-input">
+      <button type="submit" class="btn btn-primary btn-small">Rechercher</button>
+      ${searchQuery ? '<a href="/admin/users" class="btn btn-secondary btn-small">Effacer</a>' : ''}
+    </form>
+    <div class="result-count">${total} utilisateur${total !== 1 ? 's' : ''} ${searchQuery ? 'trouve(s)' : 'au total'}</div>
+  </div>
 
   <div class="table-wrapper">
     <table class="admin-table data-table">
@@ -39,6 +83,7 @@ const body = `
           <th>ID</th>
           <th>Nom</th>
           <th>Email</th>
+          <th>Groupes</th>
           <th>Verifie</th>
           <th>Admin</th>
           <th>Inscrit le</th>
@@ -50,61 +95,9 @@ const body = `
       </tbody>
     </table>
   </div>
-</div>
 
-<style>
-  .admin-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1rem 0;
-  }
-  .admin-table th, .admin-table td {
-    padding: 0.75rem;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-  }
-  .admin-table th {
-    background: #f5f5f5;
-    font-weight: 600;
-  }
-  .admin-table tr:hover {
-    background: #fafafa;
-  }
-  .btn-small {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-  }
-  .btn-danger {
-    background: #dc3545;
-    color: white;
-    border: none;
-    cursor: pointer;
-  }
-  .btn-danger:hover {
-    background: #c82333;
-  }
-  .actions {
-    white-space: nowrap;
-  }
-  .actions form {
-    margin-right: 0.25rem;
-  }
-  .alert {
-    padding: 1rem;
-    border-radius: 4px;
-    margin: 1rem 0;
-  }
-  .alert-success {
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-  }
-  .alert-error {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-  }
-</style>
+  ${paginationHtml}
+</div>
 `;
 %>
 <%- include('../layout', { title: 'Gestion des utilisateurs', organizer, body }) %>

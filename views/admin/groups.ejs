@@ -1,30 +1,81 @@
 <%
 const escapeHtml = (str) => str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
 
-let groupRows = groups.map(group => {
-  const date = new Date(group.created_at).toLocaleDateString('fr-FR');
-  return `<tr>
-    <td>${group.id}</td>
-    <td>${escapeHtml(group.name)}</td>
-    <td><code>${escapeHtml(group.code)}</code></td>
-    <td>${escapeHtml(group.organizer_first_name)} ${escapeHtml(group.organizer_last_name)}<br><small>${escapeHtml(group.organizer_email)}</small></td>
-    <td>${group.participant_count}</td>
-    <td>${date}</td>
-    <td class="actions">
-      <form action="/admin/groups/${group.id}/delete" method="POST" style="display:inline;" 
-            onsubmit="return confirm('Etes-vous sur de vouloir supprimer ce groupe ? Tous les participants et tirages seront supprimes. Cette action est irreversible.');">
-        <input type="hidden" name="_csrf" value="${csrfToken}">
-        <button type="submit" class="btn btn-small btn-danger">Supprimer</button>
-      </form>
-    </td>
-  </tr>`;
-}).join('');
+let groupRows = '';
+if (groups.length === 0) {
+  groupRows = `<tr><td colspan="9" style="text-align: center; color: #666; padding: 2rem;">Aucun groupe trouve.</td></tr>`;
+} else {
+  groupRows = groups.map(group => {
+    const date = new Date(group.created_at).toLocaleDateString('fr-FR');
+    const statusBadge = group.archived_at
+      ? '<span class="badge badge-archived">Archive</span>'
+      : '<span class="badge badge-active">Actif</span>';
+    const drawBadge = group.has_draw > 0
+      ? '<span class="badge badge-success">Oui</span>'
+      : '<span class="badge badge-pending">Non</span>';
+    return `<tr>
+      <td>${group.id}</td>
+      <td>${escapeHtml(group.name)}</td>
+      <td><code>${escapeHtml(group.code)}</code></td>
+      <td>${escapeHtml(group.organizer_first_name)} ${escapeHtml(group.organizer_last_name)}<br><small>${escapeHtml(group.organizer_email)}</small></td>
+      <td>${group.participant_count}</td>
+      <td>${statusBadge}</td>
+      <td>${drawBadge}</td>
+      <td>${date}</td>
+      <td class="actions">
+        <form action="/admin/groups/${group.id}/delete" method="POST" style="display:inline;" 
+              onsubmit="return confirm('Etes-vous sur de vouloir supprimer ce groupe ? Tous les participants et tirages seront supprimes. Cette action est irreversible.');">
+          <input type="hidden" name="_csrf" value="${csrfToken}">
+          <button type="submit" class="btn btn-small btn-danger">Supprimer</button>
+        </form>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+const searchQuery = typeof search !== 'undefined' ? escapeHtml(search) : '';
+const currentPage = typeof page !== 'undefined' ? page : 1;
+const pages = typeof totalPages !== 'undefined' ? totalPages : 1;
+const total = typeof totalCount !== 'undefined' ? totalCount : 0;
+
+let paginationHtml = '';
+if (pages > 1) {
+  let links = '';
+  const qParam = searchQuery ? `&q=${encodeURIComponent(search)}` : '';
+  
+  if (currentPage > 1) {
+    links += `<a href="/admin/groups?page=${currentPage - 1}${qParam}" class="pagination-link">&laquo; Precedent</a>`;
+  }
+  
+  for (let i = 1; i <= pages; i++) {
+    if (i === 1 || i === pages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+      links += `<a href="/admin/groups?page=${i}${qParam}" class="pagination-link ${i === currentPage ? 'active' : ''}">${i}</a>`;
+    } else if (i === currentPage - 3 || i === currentPage + 3) {
+      links += `<span class="pagination-ellipsis">...</span>`;
+    }
+  }
+  
+  if (currentPage < pages) {
+    links += `<a href="/admin/groups?page=${currentPage + 1}${qParam}" class="pagination-link">Suivant &raquo;</a>`;
+  }
+  
+  paginationHtml = `<div class="pagination">${links}</div>`;
+}
 
 const body = `
 <div class="container admin-page">
   <h1>Gestion des groupes</h1>
   
   <p><a href="/admin">&larr; Retour au tableau de bord</a></p>
+
+  <div class="admin-toolbar">
+    <form action="/admin/groups" method="GET" class="search-form">
+      <input type="text" name="q" value="${searchQuery}" placeholder="Rechercher par nom, code ou organisateur..." class="search-input">
+      <button type="submit" class="btn btn-primary btn-small">Rechercher</button>
+      ${searchQuery ? '<a href="/admin/groups" class="btn btn-secondary btn-small">Effacer</a>' : ''}
+    </form>
+    <div class="result-count">${total} groupe${total !== 1 ? 's' : ''} ${searchQuery ? 'trouve(s)' : 'au total'}</div>
+  </div>
 
   <div class="table-wrapper">
     <table class="admin-table data-table">
@@ -35,6 +86,8 @@ const body = `
           <th>Code</th>
           <th>Organisateur</th>
           <th>Participants</th>
+          <th>Statut</th>
+          <th>Tirage</th>
           <th>Cree le</th>
           <th>Actions</th>
         </tr>
@@ -44,67 +97,9 @@ const body = `
       </tbody>
     </table>
   </div>
-</div>
 
-<style>
-  .admin-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1rem 0;
-  }
-  .admin-table th, .admin-table td {
-    padding: 0.75rem;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-  }
-  .admin-table th {
-    background: #f5f5f5;
-    font-weight: 600;
-  }
-  .admin-table tr:hover {
-    background: #fafafa;
-  }
-  .admin-table code {
-    background: #e9ecef;
-    padding: 0.125rem 0.25rem;
-    border-radius: 3px;
-    font-family: monospace;
-  }
-  .admin-table small {
-    color: #666;
-  }
-  .btn-small {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-  }
-  .btn-danger {
-    background: #dc3545;
-    color: white;
-    border: none;
-    cursor: pointer;
-  }
-  .btn-danger:hover {
-    background: #c82333;
-  }
-  .actions {
-    white-space: nowrap;
-  }
-  .alert {
-    padding: 1rem;
-    border-radius: 4px;
-    margin: 1rem 0;
-  }
-  .alert-success {
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-  }
-  .alert-error {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-  }
-</style>
+  ${paginationHtml}
+</div>
 `;
 %>
 <%- include('../layout', { title: 'Gestion des groupes', organizer, body }) %>

@@ -102,6 +102,14 @@ const Participant = {
   },
 
   /**
+   * Count all participants across all groups
+   */
+  countAll() {
+    const stmt = db.prepare('SELECT COUNT(*) as count FROM participants');
+    return stmt.get().count;
+  },
+
+  /**
    * Update participant wishes
    * @param {number} id - Participant ID
    * @param {object} data - { wish1, wish2, wish3 }

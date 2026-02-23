@@ -14,6 +14,14 @@ const body = `
       <p>Groupes</p>
       <a href="/admin/groups" class="btn btn-secondary">Gerer</a>
     </div>
+    <div class="stat-card">
+      <h3>${participantCount}</h3>
+      <p>Participants</p>
+    </div>
+    <div class="stat-card ${pendingDrawCount > 0 ? 'stat-warning' : 'stat-success'}">
+      <h3>${pendingDrawCount}</h3>
+      <p>Tirages en attente</p>
+    </div>
   </div>
 
   <div class="admin-nav">
@@ -40,6 +48,7 @@ const body = `
     text-align: center;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     min-width: 150px;
+    flex: 1;
   }
   .stat-card h3 {
     font-size: 2.5rem;
@@ -49,6 +58,18 @@ const body = `
   .stat-card p {
     margin: 0.5rem 0 1rem;
     color: #666;
+  }
+  .stat-card.stat-warning {
+    background: #fff3cd;
+  }
+  .stat-card.stat-warning h3 {
+    color: #856404;
+  }
+  .stat-card.stat-success {
+    background: #d4edda;
+  }
+  .stat-card.stat-success h3 {
+    color: #28a745;
   }
   .admin-nav {
     margin-top: 2rem;

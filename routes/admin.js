@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const Organizer = require('../models/organizer');
 const Group = require('../models/group');
+const Participant = require('../models/participant');
+
+const ITEMS_PER_PAGE = 20;
 
 /**
  * Middleware: Require admin access
@@ -28,10 +31,14 @@ router.use(requireAdmin);
 router.get('/', (req, res) => {
   const organizerCount = Organizer.countAll();
   const groupCount = Group.countAll();
+  const participantCount = Participant.countAll();
+  const pendingDrawCount = Group.countPendingDraw();
   
   res.render('admin/dashboard', {
     organizerCount,
-    groupCount
+    groupCount,
+    participantCount,
+    pendingDrawCount
   });
 });
 
@@ -39,9 +46,20 @@ router.get('/', (req, res) => {
  * GET /admin/users - List all users (organizers)
  */
 router.get('/users', (req, res) => {
-  const users = Organizer.findAll();
+  const search = req.query.q || '';
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+
+  const users = Organizer.findAll({ search, page, limit: ITEMS_PER_PAGE });
+  const totalCount = Organizer.countAll(search);
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
   
-  res.render('admin/users', { users });
+  res.render('admin/users', {
+    users,
+    search,
+    page,
+    totalPages,
+    totalCount
+  });
 });
 
 /**
@@ -101,9 +119,20 @@ router.post('/users/:id/delete', (req, res) => {
  * GET /admin/groups - List all groups
  */
 router.get('/groups', (req, res) => {
-  const groups = Group.findAllWithOrganizer();
+  const search = req.query.q || '';
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+
+  const groups = Group.findAllWithOrganizer({ search, page, limit: ITEMS_PER_PAGE });
+  const totalCount = Group.countAll(search);
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
   
-  res.render('admin/groups', { groups });
+  res.render('admin/groups', {
+    groups,
+    search,
+    page,
+    totalPages,
+    totalCount
+  });
 });
 
 /**

@@ -143,26 +143,68 @@ const Group = {
 
   /**
    * Get all groups with organizer info (for admin panel)
+   * Supports search and pagination
+   * @param {object} options - { search, page, limit }
    */
-  findAllWithOrganizer() {
+  findAllWithOrganizer(options = {}) {
+    const { search, page = 1, limit = 20 } = options;
+    const offset = (page - 1) * limit;
+
+    let whereClause = '';
+    const params = [];
+
+    if (search && search.trim()) {
+      const term = `%${search.trim()}%`;
+      whereClause = `WHERE (g.name LIKE ? OR g.code LIKE ? OR o.first_name LIKE ? OR o.last_name LIKE ? OR o.email LIKE ?)`;
+      params.push(term, term, term, term, term);
+    }
+
     const stmt = db.prepare(`
       SELECT 
         g.id, g.name, g.code, g.archived_at, g.created_at,
         o.id as organizer_id, o.email as organizer_email, 
         o.first_name as organizer_first_name, o.last_name as organizer_last_name,
-        (SELECT COUNT(*) FROM participants WHERE group_id = g.id) as participant_count
+        (SELECT COUNT(*) FROM participants WHERE group_id = g.id) as participant_count,
+        (SELECT COUNT(*) FROM assignments WHERE giver_id IN (SELECT id FROM participants WHERE group_id = g.id)) as has_draw
       FROM groups g
       JOIN organizers o ON g.organizer_id = o.id
+      ${whereClause}
       ORDER BY g.created_at DESC
+      LIMIT ? OFFSET ?
     `);
-    return stmt.all();
+    params.push(limit, offset);
+
+    return stmt.all(...params);
   },
 
   /**
-   * Count all groups
+   * Count all groups (with optional search filter)
+   * @param {string} search - Optional search term
    */
-  countAll() {
+  countAll(search) {
+    if (search && search.trim()) {
+      const term = `%${search.trim()}%`;
+      const stmt = db.prepare(`
+        SELECT COUNT(*) as count FROM groups g
+        JOIN organizers o ON g.organizer_id = o.id
+        WHERE (g.name LIKE ? OR g.code LIKE ? OR o.first_name LIKE ? OR o.last_name LIKE ? OR o.email LIKE ?)
+      `);
+      return stmt.get(term, term, term, term, term).count;
+    }
     const stmt = db.prepare('SELECT COUNT(*) as count FROM groups');
+    return stmt.get().count;
+  },
+
+  /**
+   * Count groups that have participants but no draw yet
+   */
+  countPendingDraw() {
+    const stmt = db.prepare(`
+      SELECT COUNT(*) as count FROM groups g
+      WHERE g.archived_at IS NULL
+        AND (SELECT COUNT(*) FROM participants WHERE group_id = g.id) >= 3
+        AND (SELECT COUNT(*) FROM assignments WHERE giver_id IN (SELECT id FROM participants WHERE group_id = g.id)) = 0
+    `);
     return stmt.get().count;
   }
 };

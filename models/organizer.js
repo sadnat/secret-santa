@@ -257,20 +257,48 @@ const Organizer = {
 
   /**
    * Get all organizers (for admin panel)
+   * Supports search and pagination
+   * @param {object} options - { search, page, limit }
    */
-  findAll() {
+  findAll(options = {}) {
+    const { search, page = 1, limit = 20 } = options;
+    const offset = (page - 1) * limit;
+
+    let whereClause = '';
+    const params = [];
+
+    if (search && search.trim()) {
+      const term = `%${search.trim()}%`;
+      whereClause = `WHERE (o.first_name LIKE ? OR o.last_name LIKE ? OR o.email LIKE ?)`;
+      params.push(term, term, term);
+    }
+
     const stmt = db.prepare(`
-      SELECT id, email, first_name, last_name, is_verified, is_admin, created_at
-      FROM organizers
-      ORDER BY created_at DESC
+      SELECT o.id, o.email, o.first_name, o.last_name, o.is_verified, o.is_admin, o.created_at,
+        (SELECT COUNT(*) FROM groups WHERE organizer_id = o.id) as group_count
+      FROM organizers o
+      ${whereClause}
+      ORDER BY o.created_at DESC
+      LIMIT ? OFFSET ?
     `);
-    return stmt.all();
+    params.push(limit, offset);
+
+    return stmt.all(...params);
   },
 
   /**
-   * Count all organizers
+   * Count all organizers (with optional search filter)
+   * @param {string} search - Optional search term
    */
-  countAll() {
+  countAll(search) {
+    if (search && search.trim()) {
+      const term = `%${search.trim()}%`;
+      const stmt = db.prepare(`
+        SELECT COUNT(*) as count FROM organizers o
+        WHERE (o.first_name LIKE ? OR o.last_name LIKE ? OR o.email LIKE ?)
+      `);
+      return stmt.get(term, term, term).count;
+    }
     const stmt = db.prepare('SELECT COUNT(*) as count FROM organizers');
     return stmt.get().count;
   },
