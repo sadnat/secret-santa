@@ -156,6 +156,35 @@ router.get('/verify/:token', (req, res) => {
   }
 });
 
+/**
+ * Resend verification email
+ */
+router.post('/resend-verification', async (req, res) => {
+  const { email } = req.body;
+
+  if (!email || !isValidEmail(email)) {
+    req.flash('error', 'Veuillez entrer une adresse email valide.');
+    return res.redirect('/organizer/login');
+  }
+
+  try {
+    const organizer = Organizer.findByEmail(email);
+
+    if (organizer && !organizer.is_verified) {
+      const verificationToken = Organizer.refreshVerificationToken(organizer.id);
+      await MailerService.sendVerificationEmail(email.toLowerCase().trim(), verificationToken);
+    }
+
+    // Same message regardless to prevent enumeration
+    req.flash('success', 'Si cette adresse email est associee a un compte non verifie, un nouvel email de verification a ete envoye.');
+    res.redirect('/organizer/login');
+  } catch (error) {
+    console.error('Resend verification error:', error);
+    req.flash('error', 'Une erreur est survenue. Veuillez reessayer.');
+    res.redirect('/organizer/login');
+  }
+});
+
 // ==================== PASSWORD RESET ====================
 
 /**

@@ -21,7 +21,7 @@
           <% } %>
           <form action="/organizer/logout" method="POST" style="display:inline;">
             <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-            <button type="submit" class="nav-logout-btn">Deconnexion</button>
+            <button type="submit" class="nav-logout-btn" aria-label="Se deconnecter">Deconnexion</button>
           </form>
         <% } else { %>
           <a href="/join">Rejoindre un groupe</a>
@@ -34,12 +34,12 @@
   <main>
     <% if (typeof flashSuccess !== 'undefined' && flashSuccess.length > 0) { %>
       <% flashSuccess.forEach(function(msg) { %>
-        <div class="alert alert-success flash-animate"><%= msg %></div>
+        <div class="alert alert-success flash-animate" role="alert">&#10003; <%= msg %></div>
       <% }); %>
     <% } %>
     <% if (typeof flashError !== 'undefined' && flashError.length > 0) { %>
       <% flashError.forEach(function(msg) { %>
-        <div class="alert alert-error flash-animate"><%= msg %></div>
+        <div class="alert alert-error flash-animate" role="alert">&#10007; <%= msg %></div>
       <% }); %>
     <% } %>
     <%- body %>

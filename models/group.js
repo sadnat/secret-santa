@@ -155,7 +155,7 @@ const Group = {
 
     if (search && search.trim()) {
       const term = `%${search.trim()}%`;
-      whereClause = `WHERE (g.name LIKE ? OR g.code LIKE ? OR o.first_name LIKE ? OR o.last_name LIKE ? OR o.email LIKE ?)`;
+      whereClause = 'WHERE (g.name LIKE ? OR g.code LIKE ? OR o.first_name LIKE ? OR o.last_name LIKE ? OR o.email LIKE ?)';
       params.push(term, term, term, term, term);
     }
 

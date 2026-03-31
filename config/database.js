@@ -277,6 +277,14 @@ function initialize() {
     )
   `);
 
+  // Performance indexes
+  db.exec('CREATE INDEX IF NOT EXISTS idx_participants_group_id ON participants(group_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_assignments_giver_id ON assignments(giver_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_exclusions_giver_id ON exclusions(giver_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_groups_organizer_id ON groups(organizer_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_organizers_email ON organizers(email)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_groups_code ON groups(code)');
+
   // Seed default theme if not set
   const existingTheme = db.prepare('SELECT value FROM config WHERE key = ?').get('theme');
   if (!existingTheme) {

@@ -90,7 +90,7 @@ const body = `
   <section class="reset-section">
     <h2>Reinitialiser</h2>
     <p class="text-warning">Attention : cette action supprimera le tirage actuel et tous les emails envoyes seront perdus.</p>
-    <form action="/organizer/groups/${group.id}/draw/reset" method="POST" onsubmit="return confirm('Confirmer la suppression du tirage ?')">
+    <form action="/organizer/groups/${group.id}/draw/reset" method="POST" onsubmit="return confirm('ATTENTION : Cette action supprimera definitivement le tirage et le statut des emails. Etes-vous sur ?') && confirm('Derniere confirmation : voulez-vous vraiment reinitialiser le tirage ?')">
       <input type="hidden" name="_csrf" value="${csrfToken}">
       <button type="submit" class="btn btn-danger">Reinitialiser le tirage</button>
     </form>

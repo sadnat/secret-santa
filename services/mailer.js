@@ -211,9 +211,9 @@ Joyeuses fetes !
   },
 
   /**
-   * Send email to a single participant
+   * Send email to a single participant (with retry)
    */
-  async sendEmail(assignment, groupName, groupExtra) {
+  async sendEmail(assignment, groupName, groupExtra, maxRetries = 3) {
     const transporter = this.createTransporter();
 
     const subject = groupName
@@ -243,8 +243,20 @@ Joyeuses fetes !
       )
     };
 
-    await transporter.sendMail(mailOptions);
-    Assignment.markEmailSent(assignment.id);
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await transporter.sendMail(mailOptions);
+        Assignment.markEmailSent(assignment.id);
+        return;
+      } catch (error) {
+        if (attempt === maxRetries) {
+          throw error;
+        }
+        const delay = attempt * 2000;
+        console.warn(`Email to ${assignment.giver_email} failed (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
   },
 
   /**
@@ -377,25 +389,35 @@ Joyeuses fetes !
       errors: []
     };
 
-    for (const assignment of pending) {
-      try {
-        console.log(`Sending email to ${assignment.giver_email}...`);
-        await this.sendEmail(assignment, groupName, groupExtra);
-        console.log(`Email sent successfully to ${assignment.giver_email}`);
-        results.sent++;
-      } catch (error) {
-        console.error(`Failed to send email to ${assignment.giver_email}:`, error.message);
-        results.failed++;
-        results.errors.push({
-          email: assignment.giver_email,
-          error: error.message
-        });
+    // Send emails in batches of 5 for better performance
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < pending.length; i += BATCH_SIZE) {
+      const batch = pending.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.allSettled(
+        batch.map(async (assignment) => {
+          console.log(`Sending email to ${assignment.giver_email}...`);
+          await this.sendEmail(assignment, groupName, groupExtra);
+          console.log(`Email sent successfully to ${assignment.giver_email}`);
+          return assignment.giver_email;
+        })
+      );
+
+      for (let j = 0; j < batchResults.length; j++) {
+        if (batchResults[j].status === 'fulfilled') {
+          results.sent++;
+        } else {
+          const email = batch[j].giver_email;
+          console.error(`Failed to send email to ${email}:`, batchResults[j].reason.message);
+          results.failed++;
+          results.errors.push({ email, error: batchResults[j].reason.message });
+        }
       }
     }
 
     if (results.failed > 0) {
       results.success = false;
-      results.message = `${results.sent} emails envoyes, ${results.failed} echecs.`;
+      const failedEmails = results.errors.map(e => e.email).join(', ');
+      results.message = `${results.sent} emails envoyes, ${results.failed} echecs (${failedEmails}).`;
     } else {
       results.message = `${results.sent} emails envoyes avec succes.`;
     }

@@ -80,6 +80,14 @@ const emailLimiter = rateLimit({
   message: 'Veuillez patienter avant de renvoyer des emails.'
 });
 
+const registrationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Trop de tentatives d\'inscription, veuillez reessayer dans 15 minutes.'
+});
+
 // Middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -146,7 +154,7 @@ app.use('/organizer/login', authLimiter);
 app.use('/organizer/register', authLimiter);
 app.use('/organizer/forgot-password', authLimiter);
 app.use('/organizer/reset-password', authLimiter);
-app.use('/join', authLimiter);
+app.use('/join', registrationLimiter);
 app.use('/participant', authLimiter);
 
 // Apply email rate limiter

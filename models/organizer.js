@@ -64,6 +64,19 @@ const Organizer = {
   },
 
   /**
+   * Refresh verification token (for resend)
+   */
+  refreshVerificationToken(id) {
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    const stmt = db.prepare('UPDATE organizers SET verification_token = ?, verification_token_expires_at = ? WHERE id = ?');
+    stmt.run(token, expiresAt, id);
+
+    return token;
+  },
+
+  /**
    * Verify password and return organizer if valid
    */
   async verifyPassword(email, password) {
@@ -269,7 +282,7 @@ const Organizer = {
 
     if (search && search.trim()) {
       const term = `%${search.trim()}%`;
-      whereClause = `WHERE (o.first_name LIKE ? OR o.last_name LIKE ? OR o.email LIKE ?)`;
+      whereClause = 'WHERE (o.first_name LIKE ? OR o.last_name LIKE ? OR o.email LIKE ?)';
       params.push(term, term, term);
     }
 

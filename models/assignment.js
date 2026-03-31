@@ -182,14 +182,16 @@ const Assignment = {
 
     const assignments = stmt.all(groupId);
 
+    // Pre-load all participants for this group to avoid N+1 queries
+    const allParticipants = db.prepare('SELECT * FROM participants WHERE group_id = ?').all(groupId);
+    const participantMap = new Map(allParticipants.map(p => [p.id, p]));
+
     return assignments.map(a => {
       const receiverId = this.decrypt(a.encrypted_receiver);
-      const receiver = db.prepare('SELECT * FROM participants WHERE id = ?').get(receiverId);
-
       return {
         ...a,
         receiver_id: receiverId,
-        receiver
+        receiver: participantMap.get(receiverId) || null
       };
     });
   },

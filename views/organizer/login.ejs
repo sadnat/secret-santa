@@ -12,15 +12,29 @@ const body = `
     <div class="form-group">
       <label for="email">Email</label>
       <input type="email" id="email" name="email" required
+             autocomplete="email"
              placeholder="votre@email.com">
     </div>
     <div class="form-group">
       <label for="password">Mot de passe</label>
       <input type="password" id="password" name="password" required
+             autocomplete="current-password"
              placeholder="Votre mot de passe">
     </div>
     <button type="submit" class="btn btn-primary">Se connecter</button>
   </form>
+
+  <details class="resend-verification" style="margin-top: 1rem; text-align: center;">
+    <summary style="cursor: pointer; color: #666;">Email de verification non recu ?</summary>
+    <form action="/organizer/resend-verification" method="POST" style="margin-top: 0.5rem;">
+      <input type="hidden" name="_csrf" value="${csrfToken}">
+      <div class="form-group" style="margin-bottom: 0.5rem;">
+        <input type="email" name="email" required autocomplete="email"
+               placeholder="votre@email.com" style="max-width: 300px; margin: 0 auto;">
+      </div>
+      <button type="submit" class="btn btn-secondary btn-small">Renvoyer l'email de verification</button>
+    </form>
+  </details>
 
   <p class="back-link"><a href="/organizer/forgot-password">Mot de passe oublie ?</a></p>
   <p class="back-link">Pas encore de compte ? <a href="/organizer/register">Creer un compte</a></p>

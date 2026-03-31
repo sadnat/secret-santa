@@ -33,7 +33,7 @@ const AdminLog = {
 
     if (search && search.trim()) {
       const term = `%${search.trim()}%`;
-      whereClause = `WHERE (l.action LIKE ? OR l.admin_email LIKE ? OR l.details LIKE ? OR l.target_type LIKE ?)`;
+      whereClause = 'WHERE (l.action LIKE ? OR l.admin_email LIKE ? OR l.details LIKE ? OR l.target_type LIKE ?)';
       params.push(term, term, term, term);
     }
 

@@ -11,6 +11,9 @@ npm run dev
 # Production
 npm start
 
+# Linting
+npm run lint
+
 # Docker
 docker compose up -d          # Start
 docker compose down           # Stop
@@ -18,88 +21,51 @@ docker compose build          # Rebuild after code changes
 docker compose logs -f        # View logs
 ```
 
+No automated test framework is configured. Changes must be verified manually by starting the server (`npm run dev`) and testing affected routes.
+
 ## Architecture
 
-Node.js/Express application for organizing Secret Santa gift exchanges with multi-organizer support. Each organizer manages their own group with participant registration, exclusion rules, random draw, and email notifications.
+Node.js/Express application (French UI) for organizing Secret Santa gift exchanges. Supports multiple organizers, each managing multiple groups with participant registration, exclusion rules, random draw, and SMTP email notifications.
 
-### Core Components
+### Key Design Decisions
 
-- **app.js** - Express server entry point, middleware setup, route mounting
-- **config/database.js** - SQLite initialization via better-sqlite3, creates tables on startup, handles migrations
-- **models/** - Data access layer:
-  - `organizer.js` - Organizer CRUD with bcrypt password hashing
-  - `participant.js` - Participant CRUD filtered by organizer
-  - `exclusion.js` - Exclusion rules filtered by organizer
-  - `assignment.js` - Encrypted assignments filtered by organizer
-- **routes/** - HTTP handlers:
-  - `index.js` - Public routes (`/`, `/join`, `/join/:code`, `/success`)
-  - `organizer.js` - Organizer routes (`/organizer/*` - auth, dashboard, settings, exclusions, draw)
-- **services/** - Business logic:
-  - `draw.js` - Hamiltonian cycle algorithm respecting exclusion rules (per organizer)
-  - `mailer.js` - Nodemailer SMTP integration with group name in emails
-- **views/** - EJS templates:
-  - `views/` - Public pages (index, register, success, join-code, error)
-  - `views/organizer/` - Organizer pages (login, register, dashboard, settings, delete, exclusions, draw)
-  - `views/layout.ejs` - Shared layout with dynamic navigation
+- **Multi-group model**: Organizers own multiple groups. Groups contain participants, exclusions, and assignments. Routes for group-specific actions are nested under `/organizer/groups/:groupId(\\d+)/` using `mergeParams: true`.
+- **Data isolation**: Group-level middleware (`requireGroupAccess` in `routes/group.js`) verifies the logged-in organizer owns the group before any operation.
+- **Admin system**: Organizers with `is_admin=1` access `/admin/*` routes. Admin is bootstrapped via `ADMIN_EMAIL` env var on startup. Admin can manage users, groups, themes, and view audit logs (`admin_logs` table).
+- **Assignment secrecy**: Assignments are encrypted with AES (crypto-js) using `ENCRYPTION_KEY`. Organizers see draw status but never who gives to whom. Decryption only happens when sending emails.
+- **Draw algorithm**: `services/draw.js` builds a Hamiltonian cycle via backtracking with random shuffling (up to 100 attempts), respecting exclusion rules.
+- **Database**: SQLite via `better-sqlite3` (synchronous API — no `await` on queries). Schema migrations run inline in `config/database.js` on startup using `PRAGMA table_info` checks + `ALTER TABLE`.
+- **CSRF**: Double-submit cookie pattern via `csrf-csrf`. Token available as `res.locals.csrfToken` in views; submit via hidden `_csrf` field.
+- **Flash messages**: `connect-flash` — available in views as `flashSuccess` / `flashError`.
+- **Theming**: Global theme stored in `config` table, exposed as `res.locals.theme` in all views.
 
-### Multi-Organizer System
+### Route Structure
 
-- Each organizer creates an account with email/password (bcrypt hashed)
-- Organizer creates a group with a unique 8-character invite code
-- Participants join via URL `https://santa.twibox.fr/join/CODE` or by entering code manually
-- Same email can participate in multiple groups (unique per organizer)
-- Data isolation: organizers only see their own participants, exclusions, and assignments
-- Session stores organizer info: `req.session.organizer = { id, email, firstName, lastName, groupName, groupCode }`
+- `routes/index.js` — Public: home (`/`), join by code (`/join/:code`), participant registration, wish editing (`/participant/edit-wishes/:token`)
+- `routes/organizer.js` — Auth: login, register, forgot/reset password, dashboard (lists organizer's groups), account settings, delete
+- `routes/group.js` — Group management (mounted at `/organizer/groups/:groupId`): dashboard, participants, exclusions, draw, settings, archive
+- `routes/admin.js` — Admin panel: users, groups, logs, theme config
 
-### Group Lifecycle
+### Models
 
-- **Archive**: Organizers can archive their group to block all modifications (no new participants, no exclusion changes, no new draws). Can be unarchived later.
-- **Delete**: Permanent account deletion with cascade (participants, exclusions, assignments). Requires password confirmation.
-- `requireNotArchived` middleware blocks modifications on archived groups.
+Plain objects with methods (not classes). Each model wraps `better-sqlite3` prepared statements. Key models: `organizer.js`, `group.js`, `participant.js`, `exclusion.js`, `assignment.js`, `admin-log.js`.
 
-### Security Model
+### Database Tables
 
-- Organizer passwords hashed with bcrypt (10 rounds)
-- Assignments encrypted with AES (crypto-js) using `ENCRYPTION_KEY`
-- Organizers can see draw status and email status, but cannot see who gives to whom
-- Decryption only happens when sending emails
+- `organizers` — id, email, password_hash, first_name, last_name, is_admin, is_verified, verification_token, reset_token, created_at
+- `groups` — id, organizer_id, name, code (8-char hex), budget, event_date, archived_at, created_at
+- `participants` — id, first_name, last_name, email, wish1-3, organizer_id, group_id, edit_token, created_at
+- `exclusions` — id, giver_id, receiver_id (unique pair)
+- `assignments` — id, giver_id, receiver_hash, encrypted_receiver, email_sent, created_at
+- `config` — key/value store (theme, etc.)
+- `admin_logs` — admin action audit trail
 
-### Database
+Unique constraints: `(organizer_id, email)` and `(group_id, email)` on participants.
 
-SQLite stored in `data/santa.db` with tables:
+## Code Style
 
-- `organizers` - id, email, password_hash, first_name, last_name, group_name, group_code, archived_at, created_at
-- `participants` - id, first_name, last_name, email, wish1-3, organizer_id, created_at
-- `exclusions` - id, giver_id, receiver_id (references participants)
-- `assignments` - id, giver_id, receiver_hash, encrypted_receiver, email_sent, created_at
-- `config` - key, value
-
-Unique constraint on `(organizer_id, email)` in participants table.
-
-Migration: On startup, if existing participants table lacks `organizer_id`, creates default organizer and assigns all participants to it.
+ESLint is configured (`eslint.config.js`): single quotes, semicolons, 2-space indent. CommonJS modules (`require`/`module.exports`). EJS for views with `layout.ejs` as shared layout.
 
 ## Environment Variables
 
-Copy `.env.example` to `.env`. Key variables:
-- `SESSION_SECRET` - Secret for session cookies
-- `ENCRYPTION_KEY` - 32-char key for assignment encryption
-- `SMTP_HOST` - SMTP server hostname
-- `SMTP_PORT` - SMTP port (587 or 465)
-- `SMTP_USER` - SMTP username
-- `SMTP_PASS` - SMTP password
-- `SMTP_FROM` - From address (must match authenticated user on strict servers)
-
-## URL Structure
-
-- `/` - Public home page
-- `/join` - Enter invite code manually
-- `/join/:code` - Register as participant with invite code
-- `/success` - Registration confirmation
-- `/organizer/register` - Create organizer account
-- `/organizer/login` - Organizer login
-- `/organizer/logout` - Logout
-- `/organizer/dashboard` - Manage participants
-- `/organizer/settings` - View/regenerate invite code, archive/unarchive group
-- `/organizer/settings/delete` - Delete account confirmation page
-- `/organizer/exclusions` - Manage exclusion rules
-- `/organizer/draw` - Perform draw and send emails
+Copy `.env.example` to `.env`. Required: `SESSION_SECRET`, `ENCRYPTION_KEY`. Optional: `APP_URL`, `ADMIN_EMAIL`, `SMTP_HOST/PORT/USER/PASS/FROM`, `PORT`.

@@ -90,12 +90,19 @@ router.post('/participants/add', requireNotArchived, (req, res) => {
 
   if (!first_name || first_name.trim().length < 2) {
     errors.push('Le prenom doit contenir au moins 2 caracteres.');
+  } else if (first_name.trim().length > 100) {
+    errors.push('Le prenom ne doit pas depasser 100 caracteres.');
   }
   if (!last_name || last_name.trim().length < 2) {
     errors.push('Le nom doit contenir au moins 2 caracteres.');
+  } else if (last_name.trim().length > 100) {
+    errors.push('Le nom ne doit pas depasser 100 caracteres.');
   }
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     errors.push('Veuillez entrer une adresse email valide.');
+  }
+  if ((wish1 && wish1.length > 500) || (wish2 && wish2.length > 500) || (wish3 && wish3.length > 500)) {
+    errors.push('Chaque souhait ne doit pas depasser 500 caracteres.');
   }
   if (errors.length === 0 && Participant.emailExistsForGroup(email, req.group.id)) {
     errors.push('Cette adresse email est deja inscrite dans ce groupe.');
@@ -160,12 +167,19 @@ router.post('/participants/:id/edit', requireNotArchived, (req, res) => {
   const errors = [];
   if (!first_name || first_name.trim().length < 2) {
     errors.push('Le prenom doit contenir au moins 2 caracteres.');
+  } else if (first_name.trim().length > 100) {
+    errors.push('Le prenom ne doit pas depasser 100 caracteres.');
   }
   if (!last_name || last_name.trim().length < 2) {
     errors.push('Le nom doit contenir au moins 2 caracteres.');
+  } else if (last_name.trim().length > 100) {
+    errors.push('Le nom ne doit pas depasser 100 caracteres.');
   }
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     errors.push('Veuillez entrer une adresse email valide.');
+  }
+  if ((wish1 && wish1.length > 500) || (wish2 && wish2.length > 500) || (wish3 && wish3.length > 500)) {
+    errors.push('Chaque souhait ne doit pas depasser 500 caracteres.');
   }
   // Check email uniqueness (exclude current participant)
   if (errors.length === 0 && email.toLowerCase().trim() !== participant.email) {
@@ -395,6 +409,21 @@ router.post('/settings/update', requireNotArchived, (req, res) => {
 
   if (!name || name.trim().length < 2) {
     req.flash('error', 'Le nom du groupe doit contenir au moins 2 caracteres.');
+    return res.redirect(`/organizer/groups/${req.group.id}/settings`);
+  }
+
+  if (name.trim().length > 100) {
+    req.flash('error', 'Le nom du groupe ne doit pas depasser 100 caracteres.');
+    return res.redirect(`/organizer/groups/${req.group.id}/settings`);
+  }
+
+  if (budget && budget.trim().length > 100) {
+    req.flash('error', 'Le budget ne doit pas depasser 100 caracteres.');
+    return res.redirect(`/organizer/groups/${req.group.id}/settings`);
+  }
+
+  if (event_date && !/^\d{4}-\d{2}-\d{2}$/.test(event_date)) {
+    req.flash('error', 'Format de date invalide.');
     return res.redirect(`/organizer/groups/${req.group.id}/settings`);
   }
 

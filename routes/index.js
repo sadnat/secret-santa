@@ -101,14 +101,28 @@ router.post('/join/:code', (req, res) => {
 
   if (!first_name || first_name.trim().length < 2) {
     errors.push('Le prenom doit contenir au moins 2 caracteres.');
+  } else if (first_name.trim().length > 100) {
+    errors.push('Le prenom ne doit pas depasser 100 caracteres.');
   }
 
   if (!last_name || last_name.trim().length < 2) {
     errors.push('Le nom doit contenir au moins 2 caracteres.');
+  } else if (last_name.trim().length > 100) {
+    errors.push('Le nom ne doit pas depasser 100 caracteres.');
   }
 
   if (!email || !isValidEmail(email)) {
     errors.push('Veuillez entrer une adresse email valide.');
+  }
+
+  if (wish1 && wish1.length > 500) {
+    errors.push('Chaque souhait ne doit pas depasser 500 caracteres.');
+  }
+  if (wish2 && wish2.length > 500) {
+    errors.push('Chaque souhait ne doit pas depasser 500 caracteres.');
+  }
+  if (wish3 && wish3.length > 500) {
+    errors.push('Chaque souhait ne doit pas depasser 500 caracteres.');
   }
 
   if (errors.length === 0 && Participant.emailExistsForGroup(email, group.id)) {
@@ -218,6 +232,11 @@ router.post('/participant/:token', (req, res) => {
   }
 
   const { wish1, wish2, wish3 } = req.body;
+
+  if ((wish1 && wish1.length > 500) || (wish2 && wish2.length > 500) || (wish3 && wish3.length > 500)) {
+    req.flash('error', 'Chaque souhait ne doit pas depasser 500 caracteres.');
+    return res.redirect(`/participant/${token}`);
+  }
 
   try {
     Participant.updateWishes(participant.id, { wish1, wish2, wish3 });
